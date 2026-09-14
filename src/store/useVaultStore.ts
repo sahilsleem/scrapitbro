@@ -1,11 +1,13 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import type { PhotoItem, StoredPhotoRecord, VaultFilter, VaultSortBy, IngestionProgressItem, DuplicateAlert } from '@/types';
 import { getAllPhotosFromDB, deletePhotoFromDB, updatePhotoInDB } from '@/lib/db';
+import { isPinConfigured, verifyPin } from '@/lib/pin-security';
 
 interface VaultStore {
   photos: PhotoItem[];
   activeFilter: VaultFilter;
   sortBy: VaultSortBy;
+  isPinConfigured: boolean;
   isVaultLocked: boolean;
   viewMode: 'editorial' | 'contact-sheet' | 'film-strip';
   storageUsedBytes: number;
@@ -18,10 +20,13 @@ interface VaultStore {
 
   // Actions
   initStore: () => Promise<void>;
+  loadPhotosFromDB: () => Promise<void>;
+  unlockWithPin: (pin: string) => Promise<boolean>;
+  lockVault: () => void;
+  refreshPinState: () => void;
   setFilter: (filter: VaultFilter) => void;
   setSortBy: (sortBy: VaultSortBy) => void;
   toggleFavorite: (id: string) => Promise<void>;
-  toggleLock: () => void;
   setViewMode: (mode: 'editorial' | 'contact-sheet' | 'film-strip') => void;
   addPhotoRecord: (record: StoredPhotoRecord) => void;
   deletePhoto: (id: string) => Promise<void>;
@@ -64,19 +69,32 @@ function recordToPhotoItem(record: StoredPhotoRecord): PhotoItem {
   };
 }
 
+const SESSION_UNLOCKED_KEY = 'photovault:session_unlocked';
 const VAULT_LOCKED_KEY = 'photovault:vault_locked';
+
+function getInitialLockState(): { isPinSet: boolean; isLocked: boolean } {
+  const isPinSet = isPinConfigured();
+  if (!isPinSet) {
+    return { isPinSet: false, isLocked: false };
+  }
+  try {
+    const isExplicitlyLocked = localStorage.getItem(VAULT_LOCKED_KEY) === 'true';
+    const isSessionUnlocked = sessionStorage.getItem(SESSION_UNLOCKED_KEY) === 'true';
+    const isLocked = isExplicitlyLocked || !isSessionUnlocked;
+    return { isPinSet: true, isLocked };
+  } catch {
+    return { isPinSet: true, isLocked: true };
+  }
+}
+
+const initialLockInfo = getInitialLockState();
 
 export const useVaultStore = create<VaultStore>((set, get) => ({
   photos: [],
   activeFilter: 'all',
   sortBy: 'date-desc',
-  isVaultLocked: (() => {
-    try {
-      return localStorage.getItem(VAULT_LOCKED_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  })(),
+  isPinConfigured: initialLockInfo.isPinSet,
+  isVaultLocked: initialLockInfo.isLocked,
   viewMode: 'editorial',
   storageUsedBytes: 0,
   totalCapacityBytes: 10737418240, // 10 GB
@@ -88,16 +106,36 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   initStore: async () => {
     if (get().isInitialized) return;
     try {
-      // Sync lock state across multiple tabs
+      // Sync lock state and pin configuration across multiple tabs
       window.addEventListener('storage', (e) => {
         if (e.key === VAULT_LOCKED_KEY) {
-          set({ isVaultLocked: e.newValue === 'true' });
+          if (e.newValue === 'true') {
+            get().lockVault();
+          }
+        } else if (e.key === 'photovault:pin_auth') {
+          get().refreshPinState();
         }
       });
 
+      const { isPinSet, isLocked } = getInitialLockState();
+      set({ isPinConfigured: isPinSet, isVaultLocked: isLocked });
+
+      if (!isLocked) {
+        await get().loadPhotosFromDB();
+      } else {
+        // Vault is locked: keep photos memory empty to prevent flash of content
+        set({ isInitialized: true, photos: [] });
+      }
+    } catch (error) {
+      console.error('[ScrapItBro Store] Failed to initialize store:', error);
+      set({ isInitialized: true });
+    }
+  },
+
+  loadPhotosFromDB: async () => {
+    try {
       const records = await getAllPhotosFromDB();
       const items = records.map(recordToPhotoItem);
-      
       const totalBytes = records.reduce((acc, r) => acc + (r.fileSizeBytes || 0), 0);
 
       set({
@@ -108,6 +146,55 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     } catch (error) {
       console.error('[ScrapItBro Store] Failed to load photos from DB:', error);
       set({ isInitialized: true });
+    }
+  },
+
+  unlockWithPin: async (pin: string) => {
+    const isValid = await verifyPin(pin);
+    if (!isValid) return false;
+
+    try {
+      sessionStorage.setItem(SESSION_UNLOCKED_KEY, 'true');
+      localStorage.removeItem(VAULT_LOCKED_KEY);
+    } catch {}
+
+    set({ isVaultLocked: false });
+    await get().loadPhotosFromDB();
+    return true;
+  },
+
+  lockVault: () => {
+    try {
+      sessionStorage.removeItem(SESSION_UNLOCKED_KEY);
+      localStorage.setItem(VAULT_LOCKED_KEY, 'true');
+    } catch {}
+
+    // Revoke blob URLs and purge photos from memory
+    const currentPhotos = get().photos;
+    for (const p of currentPhotos) {
+      if (p.thumbnailUrl && p.thumbnailUrl.startsWith('blob:')) URL.revokeObjectURL(p.thumbnailUrl);
+      if (p.fullUrl && p.fullUrl.startsWith('blob:')) URL.revokeObjectURL(p.fullUrl);
+    }
+
+    set({
+      photos: [],
+      isVaultLocked: true,
+    });
+  },
+
+  refreshPinState: () => {
+    const isPinSet = isPinConfigured();
+    if (!isPinSet) {
+      try {
+        sessionStorage.removeItem(SESSION_UNLOCKED_KEY);
+        localStorage.removeItem(VAULT_LOCKED_KEY);
+      } catch {}
+      set({ isPinConfigured: false, isVaultLocked: false });
+      if (get().photos.length === 0) {
+        get().loadPhotosFromDB();
+      }
+    } else {
+      set({ isPinConfigured: true });
     }
   },
 
@@ -126,18 +213,6 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     await updatePhotoInDB(id, { isFavorite: newFav });
   },
 
-  toggleLock: () =>
-    set((state) => {
-      const nextLocked = !state.isVaultLocked;
-      try {
-        if (nextLocked) {
-          localStorage.setItem(VAULT_LOCKED_KEY, 'true');
-        } else {
-          localStorage.removeItem(VAULT_LOCKED_KEY);
-        }
-      } catch {}
-      return { isVaultLocked: nextLocked };
-    }),
   setViewMode: (viewMode) => set({ viewMode }),
 
   addPhotoRecord: (record) => {

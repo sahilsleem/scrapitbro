@@ -6,6 +6,7 @@ import { getPhotoFromDB } from '@/lib/db';
 import { scrubPhotoMetadata, exportOriginalPhoto } from '@/lib/file-processing';
 import type { StrippingResult } from '@/lib/metadata-stripper';
 import { extractCompletePhotoMetadata } from '@/lib/metadata-formatter';
+import { PinUnlockScreen } from '@/components/ui/PinUnlockScreen';
 import type { PhotoItem } from '@/types';
 import {
   formatGpsCoordinates,
@@ -32,8 +33,7 @@ import {
   Cpu,
   Layers,
   Sparkles,
-  Shield,
-  Lock
+  Shield
 } from 'lucide-react';
 
 export const PhotoDetail: React.FC = () => {
@@ -41,7 +41,7 @@ export const PhotoDetail: React.FC = () => {
   const id = rawId ? decodeURIComponent(rawId) : '';
   const navigate = useNavigate();
 
-  const { photos, toggleFavorite, deletePhoto, isInitialized, isVaultLocked, toggleLock } = useVaultStore();
+  const { photos, toggleFavorite, deletePhoto, isInitialized, isVaultLocked } = useVaultStore();
 
   const storePhoto = photos.find((p) => p.id === id);
   const [localPhoto, setLocalPhoto] = useState<PhotoItem | null>(storePhoto || null);
@@ -102,6 +102,11 @@ export const PhotoDetail: React.FC = () => {
     let localCreatedThumbUrl: string | null = null;
 
     async function resolvePhoto() {
+      if (isVaultLocked) {
+        setIsLoading(false);
+        return;
+      }
+
       if (!id) {
         if (isMounted) {
           setLoadError('No photo ID specified in route.');
@@ -178,35 +183,13 @@ export const PhotoDetail: React.FC = () => {
         URL.revokeObjectURL(localCreatedThumbUrl);
       }
     };
-  }, [id, photos, isInitialized]);
+  }, [id, photos, isInitialized, isVaultLocked]);
 
   // Vault Locked State
   if (isVaultLocked) {
     return (
-      <div className="flex-1 min-h-[75vh] flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 22 }}
-          className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center mb-5 text-indigo-600 shadow-xs"
-        >
-          <Lock className="w-8 h-8 stroke-[2]" />
-        </motion.div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-          Your Vault is Locked
-        </h2>
-        <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
-          Your photos are encrypted on this device. Unlock to view your gallery.
-        </p>
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 450, damping: 20 }}
-          onClick={toggleLock}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-md shadow-indigo-500/20 transition-colors cursor-pointer"
-        >
-          Unlock Vault
-        </motion.button>
+      <div className="flex flex-col relative min-h-full px-4 sm:px-8 pt-4 sm:pt-6 pb-0 max-w-6xl mx-auto w-full">
+        <PinUnlockScreen />
       </div>
     );
   }
@@ -372,72 +355,86 @@ export const PhotoDetail: React.FC = () => {
     <div className="flex-1 flex flex-col min-h-screen pb-24">
       {/* Top Header Controls */}
       <header className="px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-20 transition-colors">
-        <Link
-          to="/"
-          className="flex items-center gap-1.5 text-slate-700 hover:text-indigo-600 text-xs sm:text-sm font-semibold transition-colors group"
-        >
-          <ArrowLeft className="w-4 h-4 stroke-[2.2] group-hover:-translate-x-0.5 transition-transform" />
-          <span>Photos</span>
-        </Link>
+        <motion.div whileHover={{ x: -2 }} whileTap={{ scale: 0.98, x: 0 }} transition={{ duration: 0.15 }}>
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 text-slate-700 hover:text-indigo-600 text-xs sm:text-sm font-semibold transition-colors group"
+          >
+            <ArrowLeft className="w-4 h-4 stroke-[2.2] group-hover:-translate-x-1 transition-transform duration-150" />
+            <span>Photos</span>
+          </Link>
+        </motion.div>
 
         {/* Previous / Next Navigation for Desktop & Actions */}
         <div className="flex items-center gap-2 sm:gap-3">
           {photos.length > 1 && (
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
-              <button
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 shadow-2xs">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ duration: 0.15 }}
                 disabled={!prevPhoto}
                 onClick={() => prevPhoto && navigate(`/photo/${encodeURIComponent(prevPhoto.id)}`)}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 disabled:opacity-30 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-white disabled:opacity-30 transition-colors cursor-pointer group"
                 title="Previous Photo (←)"
                 aria-label="Previous Photo"
               >
-                <ChevronLeft className="w-4 h-4 stroke-[2]" />
-              </button>
+                <ChevronLeft className="w-4 h-4 stroke-[2] group-hover:-translate-x-0.5 transition-transform duration-150" />
+              </motion.button>
               <span className="text-[11px] font-medium text-slate-500 px-1.5">
                 {currentIndex + 1} of {photos.length}
               </span>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.92 }}
+                transition={{ duration: 0.15 }}
                 disabled={!nextPhoto}
                 onClick={() => nextPhoto && navigate(`/photo/${encodeURIComponent(nextPhoto.id)}`)}
-                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 disabled:opacity-30 transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-indigo-600 hover:bg-white disabled:opacity-30 transition-colors cursor-pointer group"
                 title="Next Photo (→)"
                 aria-label="Next Photo"
               >
-                <ChevronRight className="w-4 h-4 stroke-[2]" />
-              </button>
+                <ChevronRight className="w-4 h-4 stroke-[2] group-hover:translate-x-0.5 transition-transform duration-150" />
+              </motion.button>
             </div>
           )}
 
-          {/* Favorite Toggle */}
+          {/* Favorite Toggle with Burst Animation */}
           <motion.button
             whileTap={{ scale: 0.88 }}
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+            whileHover={{ scale: 1.06 }}
+            transition={{ duration: 0.15 }}
             onClick={() => toggleFavorite(currentPhoto.id)}
-            className={`p-2 rounded-xl border transition-all cursor-pointer ${
+            className={`relative p-2 rounded-xl border transition-all cursor-pointer ${
               currentPhoto.isFavorite
-                ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-2xs'
-                : 'bg-white border-slate-200/80 text-slate-400 hover:text-rose-500'
+                ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-xs'
+                : 'bg-white border-slate-200/80 text-slate-400 hover:text-rose-500 hover:border-rose-200 hover:shadow-2xs'
             }`}
             title={currentPhoto.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             aria-label={currentPhoto.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
+            {currentPhoto.isFavorite && (
+              <span className="absolute inset-0 rounded-xl bg-rose-400/30 animate-heart-ripple pointer-events-none" />
+            )}
             <Heart
-              className={`w-4 h-4 stroke-[2.2] ${
+              className={`w-4 h-4 stroke-[2.2] transition-colors ${
                 currentPhoto.isFavorite ? 'fill-rose-500 text-rose-500' : ''
               }`}
             />
           </motion.button>
 
           {/* Delete Button */}
-          <button
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.92 }}
+            transition={{ duration: 0.15 }}
             onClick={handleDelete}
-            className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer"
-            title="Delete photo from vault"
+            className="p-2 rounded-xl border border-slate-200/80 bg-white hover:bg-rose-50 hover:border-rose-200/80 text-slate-400 hover:text-rose-600 transition-all cursor-pointer shadow-2xs hover:shadow-xs"
+            title="Delete photo"
             aria-label="Delete photo"
           >
             <Trash2 className="w-4 h-4 stroke-[2]" />
-          </button>
+          </motion.button>
         </div>
       </header>
 
@@ -460,15 +457,15 @@ export const PhotoDetail: React.FC = () => {
       <div className="p-4 sm:p-8 max-w-4xl mx-auto w-full flex flex-col gap-6 sm:gap-8">
         
         {/* ========================================================================= */}
-        {/* 1. PHOTO-FIRST HERO                                                       */}
+        {/* 1. PHOTO-FIRST HERO: SMOOTH EXPAND INTO DETAIL VIEW                       */}
         {/* ========================================================================= */}
-        <section className="flex flex-col gap-3">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.99 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="w-full relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950/95 border border-slate-200/80 shadow-md flex items-center justify-center min-h-[300px] max-h-[72vh]"
-          >
+        <motion.section
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.38, ease: [0.16, 1, 0.3, 1] }}
+          className="flex flex-col gap-3"
+        >
+          <div className="w-full relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950/95 border border-slate-200/80 shadow-md flex items-center justify-center min-h-[300px] max-h-[72vh]">
             <img
               src={displayImgSrc}
               alt={currentPhoto.title || 'Selected photo'}
@@ -479,7 +476,7 @@ export const PhotoDetail: React.FC = () => {
               }}
               className="w-full h-auto max-h-[72vh] object-contain mx-auto select-none"
             />
-          </motion.div>
+          </div>
 
           {/* Photo Summary Caption */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1">
@@ -502,12 +499,17 @@ export const PhotoDetail: React.FC = () => {
               )}
             </div>
           </div>
-        </section>
+        </motion.section>
 
         {/* ========================================================================= */}
-        {/* 2. THE "WOW" MOMENT: INFORMATION IN THIS PHOTO (100% REAL METADATA)       */}
+        {/* 2. CORE VALUE MOMENT: METADATA REVEAL (REVEALING WHAT WAS HIDDEN)        */}
         {/* ========================================================================= */}
-        <section className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-8">
+        <motion.section
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.44, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-8"
+        >
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
             <div>
               <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
@@ -521,9 +523,9 @@ export const PhotoDetail: React.FC = () => {
               </p>
             </div>
             
-            {/* Dynamic Details Found Badge */}
+            {/* Dynamic Details Found Badge with One-time Trust Reveal */}
             <div className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold shadow-2xs">
-              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse flex-shrink-0" />
+              <Shield className="w-3.5 h-3.5 text-indigo-600 flex-shrink-0" />
               <span>
                 {totalFieldsCount > 0
                   ? `${totalFieldsCount} ${totalFieldsCount === 1 ? 'detail' : 'details'} found inside this photo`
@@ -532,10 +534,13 @@ export const PhotoDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* Dynamic 2-Column Metadata Sections */}
+          {/* Dynamic 2-Column Metadata Sections with Clean Progressive Stagger */}
           {sections.map((section, secIdx) => (
-            <div
+            <motion.div
               key={section.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35, delay: 0.12 + secIdx * 0.05, ease: [0.16, 1, 0.3, 1] }}
               className={`flex flex-col gap-4 ${secIdx > 0 ? 'pt-6 border-t border-slate-100' : ''}`}
             >
               <div className="flex items-center gap-2">
@@ -565,7 +570,7 @@ export const PhotoDetail: React.FC = () => {
                   </div>
                 ))}
               </div>
-            </div>
+            </motion.div>
           ))}
 
           {sections.length === 0 && (
@@ -573,7 +578,7 @@ export const PhotoDetail: React.FC = () => {
               No embedded metadata found in this photo file.
             </div>
           )}
-        </section>
+        </motion.section>
 
         {/* ========================================================================= */}
         {/* 3. LOCATION SECTION (FACTUAL & CALM)                                       */}
@@ -593,7 +598,7 @@ export const PhotoDetail: React.FC = () => {
           {hasGps && gpsCoords ? (
             <div className="bg-indigo-50/40 border border-indigo-100 rounded-2xl p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-indigo-600" />
                 <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
                   Location details embedded in photo
                 </span>
@@ -710,15 +715,18 @@ export const PhotoDetail: React.FC = () => {
                 </p>
               </div>
 
-              <button
+              <motion.button
+                whileHover={{ y: -1.5 }}
+                whileTap={{ scale: 0.97, y: 0 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 onClick={handleExportOriginal}
                 disabled={isExportingOriginal}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-800 font-semibold text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
+                className="group w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200/90 hover:border-indigo-200 hover:bg-slate-50 text-slate-800 hover:text-indigo-600 font-semibold text-xs sm:text-sm transition-all duration-200 shadow-2xs hover:shadow-xs cursor-pointer select-none"
                 title="Export the exact original file"
               >
-                <Download className="w-4 h-4 text-slate-600" />
+                <Download className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 group-hover:translate-y-[-1px] transition-all" />
                 <span>{isExportingOriginal ? 'Exporting...' : 'Export Original'}</span>
-              </button>
+              </motion.button>
             </div>
 
             {/* Card B: Clean Copy */}
@@ -741,11 +749,12 @@ export const PhotoDetail: React.FC = () => {
               </div>
 
               <motion.button
-                whileTap={{ scale: 0.96 }}
-                whileHover={{ scale: 1.02 }}
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.97, y: 0 }}
+                transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                 onClick={handleScrubMetadata}
                 disabled={isScrubbing}
-                className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-500/20 disabled:opacity-50 transition-all cursor-pointer"
+                className="group w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-md hover:shadow-indigo-500/20 border border-indigo-500/30 disabled:opacity-50 transition-all duration-200 cursor-pointer select-none"
               >
                 {isScrubbing ? (
                   <>
@@ -754,7 +763,7 @@ export const PhotoDetail: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <Sparkles className="w-4 h-4 stroke-[2.2]" />
+                    <Sparkles className="w-4 h-4 stroke-[2.2] group-hover:translate-x-0.5 transition-transform duration-150" />
                     <span>Clean &amp; Export Copy</span>
                   </>
                 )}

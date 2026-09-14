@@ -127,3 +127,98 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Subtle One-Time Trust Signal Entrance on Page Load */
+@keyframes trustBadgeEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-trust-reveal {
+  animation: trustBadgeEntrance 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Continuous Drifting Ambient Background Blobs (15-20s loops) */
+@keyframes driftBlob1 {
+  0% {
+    transform: translate3d(0px, 0px, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(50px, 35px, 0) scale(1.06);
+  }
+  66% {
+    transform: translate3d(-35px, 55px, 0) scale(0.95);
+  }
+  100% {
+    transform: translate3d(0px, 0px, 0) scale(1);
+  }
+}
+
+@keyframes driftBlob2 {
+  0% {
+    transform: translate3d(0px, 0px, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(-55px, 45px, 0) scale(0.94);
+  }
+  66% {
+    transform: translate3d(40px, -35px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(0px, 0px, 0) scale(1);
+  }
+}
+
+@keyframes driftBlob3 {
+  0% {
+    transform: translate3d(0px, 0px, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(35px, -45px, 0) scale(1.04);
+  }
+  66% {
+    transform: translate3d(-45px, -25px, 0) scale(0.96);
+  }
+  100% {
+    transform: translate3d(0px, 0px, 0) scale(1);
+  }
+}
+
+.animate-drift-blob-1 {
+  animation: driftBlob1 18s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-drift-blob-2 {
+  animation: driftBlob2 20s ease-in-out infinite;
+  will-change: transform;
+}
+
+.animate-drift-blob-3 {
+  animation: driftBlob3 16s ease-in-out infinite;
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .animate-drift-blob-1,
+  .animate-drift-blob-2,
+  .animate-drift-blob-3 {
+    animation: none !important;
+    transform: none !important;
+  }
+}

@@ -46,14 +46,14 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
   }, [metaTitle, metaDescription]);
 
   return (
-    <div className="flex flex-col min-h-screen w-full">
+    <div className="flex flex-col w-full flex-1">
       {/* Main Page Container */}
-      <main className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-8 py-6 sm:py-10 flex flex-col gap-8 sm:gap-12">
+      <div className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8 flex flex-col gap-4 sm:gap-8">
         {/* Breadcrumb Back Link */}
         <div>
           <Link
             to="/"
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors group"
+            className="inline-flex items-center gap-1.5 text-[11px] sm:text-xs font-semibold text-slate-500 hover:text-indigo-600 transition-colors group"
           >
             <ArrowLeft className="w-3.5 h-3.5 stroke-[2.2] group-hover:-translate-x-0.5 transition-transform" />
             <span>Back to Photos</span>
@@ -66,7 +66,7 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
             <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold mb-3 shadow-2xs"
+              className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] sm:text-xs font-semibold mb-2 sm:mb-3 shadow-2xs"
             >
               <span>{badge}</span>
             </motion.div>
@@ -76,7 +76,7 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15]"
+            className="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.2] sm:leading-[1.15]"
           >
             {heroHeadline || title}
           </motion.h1>
@@ -86,7 +86,7 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="text-sm sm:text-base text-slate-600 mt-4 leading-relaxed font-normal"
+              className="text-xs sm:text-base text-slate-600 mt-2.5 sm:mt-4 leading-relaxed font-normal"
             >
               {heroDescription}
             </motion.p>
@@ -97,33 +97,47 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.15 }}
-              className="mt-6 sm:mt-7 flex flex-wrap items-center justify-center gap-3 w-full sm:w-auto"
+              className="mt-4 sm:mt-7 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto"
             >
               {ctaPrimaryText && (
-                <Link
-                  to={ctaPrimaryLink}
-                  className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2"
+                <motion.div
+                  whileHover={{ y: -2 }}
+                  whileTap={{ scale: 0.97, y: 0 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full sm:w-auto"
                 >
-                  <span>{ctaPrimaryText}</span>
-                </Link>
+                  <Link
+                    to={ctaPrimaryLink}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-md hover:shadow-indigo-500/20 border border-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 select-none"
+                  >
+                    <span>{ctaPrimaryText}</span>
+                  </Link>
+                </motion.div>
               )}
               {ctaSecondaryText && ctaSecondaryLink && (
-                <Link
-                  to={ctaSecondaryLink}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-xs sm:text-sm border border-slate-200/80 shadow-2xs transition-all flex items-center justify-center gap-1.5"
+                <motion.div
+                  whileHover={{ y: -1.5 }}
+                  whileTap={{ scale: 0.97, y: 0 }}
+                  transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+                  className="w-full sm:w-auto"
                 >
-                  <span>{ctaSecondaryText}</span>
-                </Link>
+                  <Link
+                    to={ctaSecondaryLink}
+                    className="w-full sm:w-auto px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 hover:text-indigo-600 font-semibold text-xs sm:text-sm border border-slate-200/80 hover:border-indigo-200 shadow-2xs hover:shadow-xs transition-all duration-200 flex items-center justify-center gap-1.5 select-none"
+                  >
+                    <span>{ctaSecondaryText}</span>
+                  </Link>
+                </motion.div>
               )}
             </motion.div>
           )}
         </section>
 
         {/* Content Body */}
-        <div className="flex flex-col gap-10 sm:gap-12 text-slate-700">
+        <div className="flex flex-col gap-4 sm:gap-8 text-slate-700">
           {children}
         </div>
-      </main>
+      </div>
 
       {/* Shared Footer */}
       <Footer />

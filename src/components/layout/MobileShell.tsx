@@ -1,12 +1,18 @@
-import React, { useEffect, useRef } from 'react';
-import { BottomTabBar } from './BottomTabBar';
+import React, { useState, useEffect, useRef } from 'react';
 import { useVaultStore } from '@/store/useVaultStore';
 import { ingestImageFiles } from '@/lib/file-processing';
 import { DarkroomConstellation } from '@/components/ui/DarkroomConstellation';
 import { ScrapItBroLogo } from '@/components/ui/ScrapItBroLogo';
-import { Plus, Image as ImageIcon, Settings as SettingsIcon } from 'lucide-react';
+import {
+  Image as ImageIcon,
+  Settings as SettingsIcon,
+  Menu,
+  X,
+  Mail
+} from 'lucide-react';
 import { Link, useLocation, NavLink } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { tabPillTransition } from '@/lib/motion';
 
 interface MobileShellProps {
   children: React.ReactNode;
@@ -17,6 +23,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
   const location = useLocation();
   const isDetail = location.pathname.startsWith('/photo/');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     initStore();
@@ -29,6 +36,32 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
     window.addEventListener('vault:shutter', handleShutter);
     return () => window.removeEventListener('vault:shutter', handleShutter);
   }, []);
+
+  // Close mobile menu whenever location changes
+  useEffect(() => {
+    setIsMenuOpen(false);
+  }, [location.pathname]);
+
+  // Handle ESC key to close mobile menu
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isMenuOpen) {
+        setIsMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isMenuOpen]);
+
+  // Immediately close mobile menu when user scrolls vertically in any direction
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const handleScroll = () => {
+      setIsMenuOpen(false);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [isMenuOpen]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
@@ -56,119 +89,284 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
       <div className="w-full max-w-6xl min-h-screen flex flex-col relative z-10">
         {/* Top Header Navigation (hidden on photo detail pages to prevent double headers) */}
         {!isDetail && (
-          <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 px-4 sm:px-8 py-3.5 transition-colors">
+          <motion.header
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="sticky top-0 z-30 bg-white/90 backdrop-blur-xl border-b border-slate-200/80 px-4 sm:px-8 py-3 transition-colors"
+          >
             <div className="flex items-center justify-between">
               {/* Logo & Brand Wordmark */}
               <Link to="/" className="flex items-center gap-2.5 group focus:outline-hidden">
-                <ScrapItBroLogo size={32} showText={true} textSize="md" />
+                <motion.div
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
+                >
+                  <ScrapItBroLogo size={28} showText={true} textSize="md" />
+                </motion.div>
               </Link>
 
-              {/* Desktop Navigation Links */}
-              <div className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1 rounded-xl border border-slate-200/60">
-                <NavLink
-                  to="/"
-                  onClick={(e) => {
-                    if (location.pathname === '/') {
-                      e.preventDefault();
-                      window.dispatchEvent(new CustomEvent('vault:scroll-to-photos'));
-                    }
-                  }}
-                  className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <ImageIcon className="w-3.5 h-3.5 stroke-[2]" />
-                  <span>Photos</span>
-                </NavLink>
-                <NavLink
-                  to="/about"
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  About
-                </NavLink>
-                <NavLink
-                  to="/how-it-works"
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  How It Works
-                </NavLink>
-                <NavLink
-                  to="/security"
-                  className={({ isActive }) =>
-                    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  Security
-                </NavLink>
-                <NavLink
-                  to="/settings"
-                  className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                      isActive
-                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`
-                  }
-                >
-                  <SettingsIcon className="w-3.5 h-3.5 stroke-[2]" />
-                  <span>Settings</span>
-                </NavLink>
-              </div>
-
-              {/* Header Right Actions */}
+              {/* Header Right: Desktop Navigation Links & Mobile Hamburger */}
               <div className="flex items-center gap-2 sm:gap-3">
-                {/* Desktop Import Button */}
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                  onClick={() => fileInputRef.current?.click()}
-                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium shadow-xs transition-colors cursor-pointer"
-                >
-                  <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                  <span>Add Photos</span>
-                </motion.button>
+                {/* Desktop Navigation Links */}
+                <nav className="hidden md:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 relative shadow-2xs" aria-label="Main Navigation">
+                  <NavLink
+                    to="/"
+                    onClick={(e) => {
+                      if (location.pathname === '/') {
+                        e.preventDefault();
+                        window.dispatchEvent(new CustomEvent('vault:scroll-to-photos'));
+                      }
+                    }}
+                    className={({ isActive }) =>
+                      `relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors group select-none ${
+                        isActive
+                          ? 'text-indigo-600 font-semibold'
+                          : 'text-slate-600 hover:text-indigo-600'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <motion.div
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97, y: 0 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex items-center gap-1.5"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeNavPill"
+                            className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                            transition={tabPillTransition}
+                          />
+                        )}
+                        <span className="relative z-10 flex items-center gap-1.5">
+                          <ImageIcon className="w-3.5 h-3.5 stroke-[2] group-hover:translate-x-0.5 transition-transform duration-150" />
+                          <span>Photos</span>
+                        </span>
+                      </motion.div>
+                    )}
+                  </NavLink>
+                  <NavLink
+                    to="/about"
+                    className={({ isActive }) =>
+                      `relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors group select-none ${
+                        isActive
+                          ? 'text-indigo-600 font-semibold'
+                          : 'text-slate-600 hover:text-indigo-600'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <motion.div
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97, y: 0 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeNavPill"
+                            className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                            transition={tabPillTransition}
+                          />
+                        )}
+                        <span className="relative z-10">About</span>
+                      </motion.div>
+                    )}
+                  </NavLink>
+                  <NavLink
+                    to="/how-it-works"
+                    className={({ isActive }) =>
+                      `relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors group select-none ${
+                        isActive
+                          ? 'text-indigo-600 font-semibold'
+                          : 'text-slate-600 hover:text-indigo-600'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <motion.div
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97, y: 0 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeNavPill"
+                            className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                            transition={tabPillTransition}
+                          />
+                        )}
+                        <span className="relative z-10">How It Works</span>
+                      </motion.div>
+                    )}
+                  </NavLink>
+                  <NavLink
+                    to="/security"
+                    className={({ isActive }) =>
+                      `relative px-3 py-1.5 rounded-lg text-xs font-medium transition-colors group select-none ${
+                        isActive
+                          ? 'text-indigo-600 font-semibold'
+                          : 'text-slate-600 hover:text-indigo-600'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <motion.div
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97, y: 0 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeNavPill"
+                            className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                            transition={tabPillTransition}
+                          />
+                        )}
+                        <span className="relative z-10">Security</span>
+                      </motion.div>
+                    )}
+                  </NavLink>
+                  <NavLink
+                    to="/settings"
+                    className={({ isActive }) =>
+                      `relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-colors group select-none ${
+                        isActive
+                          ? 'text-indigo-600 font-semibold'
+                          : 'text-slate-600 hover:text-indigo-600'
+                      }`
+                    }
+                  >
+                    {({ isActive }) => (
+                      <motion.div
+                        whileHover={{ y: -1 }}
+                        whileTap={{ scale: 0.97, y: 0 }}
+                        transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
+                        className="flex items-center gap-1.5"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="activeNavPill"
+                            className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                            transition={tabPillTransition}
+                          />
+                        )}
+                        <span className="relative z-10 flex items-center gap-1.5">
+                          <SettingsIcon className="w-3.5 h-3.5 stroke-[2] group-hover:translate-x-0.5 transition-transform duration-150" />
+                          <span>Settings</span>
+                        </span>
+                      </motion.div>
+                    )}
+                  </NavLink>
+                </nav>
 
-                {/* Mobile Settings Icon Link */}
-                <Link
-                  to="/settings"
-                  className="md:hidden p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-xl transition-colors"
-                  title="Settings"
+                {/* Mobile Hamburger Button */}
+                <motion.button
+                  type="button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.92 }}
+                  transition={{ duration: 0.15 }}
+                  onClick={() => setIsMenuOpen((prev) => !prev)}
+                  className="md:hidden p-2 rounded-xl text-slate-600 hover:text-indigo-600 hover:bg-indigo-50/70 active:bg-indigo-100/60 transition-colors focus:outline-hidden cursor-pointer"
+                  aria-label="Toggle navigation menu"
+                  aria-expanded={isMenuOpen}
                 >
-                  <SettingsIcon className="w-4 h-4 stroke-[2]" />
-                </Link>
+                  {isMenuOpen ? (
+                    <X className="w-5 h-5 stroke-[2.2]" />
+                  ) : (
+                    <Menu className="w-5 h-5 stroke-[2.2]" />
+                  )}
+                </motion.button>
               </div>
             </div>
-          </header>
+          </motion.header>
         )}
 
+        {/* Floating Top-Right Popover Menu */}
+        <AnimatePresence>
+          {!isDetail && isMenuOpen && (
+            <>
+              {/* Subtle click-away backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.12 }}
+                onClick={() => setIsMenuOpen(false)}
+                className="fixed inset-0 z-40 bg-slate-900/5 cursor-default"
+              />
+
+              {/* Floating Menu Popover Card */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: -6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -6 }}
+                transition={{ duration: 0.15, ease: 'easeOut' }}
+                className="fixed top-[56px] right-4 sm:right-6 md:right-8 z-50 w-[min(260px,calc(100vw-32px))] bg-white/95 backdrop-blur-2xl border border-slate-200/90 rounded-2xl p-2.5 shadow-xl shadow-slate-900/10 flex flex-col gap-2"
+              >
+                {/* PRODUCT GROUP */}
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pb-0.5">
+                    Product
+                  </span>
+                  <div className="flex flex-col gap-0.5">
+                    <motion.div whileHover={{ x: 3 }} whileTap={{ scale: 0.99, x: 0 }} transition={{ duration: 0.15 }}>
+                      <Link
+                        to="/"
+                        onClick={() => {
+                          setIsMenuOpen(false);
+                          if (location.pathname === '/') {
+                            window.dispatchEvent(new CustomEvent('vault:scroll-to-photos'));
+                          }
+                        }}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/60 transition-colors group"
+                      >
+                        <ImageIcon className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all stroke-[2]" />
+                        <span>Photos</span>
+                      </Link>
+                    </motion.div>
+                    <motion.div whileHover={{ x: 3 }} whileTap={{ scale: 0.99, x: 0 }} transition={{ duration: 0.15 }}>
+                      <Link
+                        to="/settings"
+                        onClick={() => setIsMenuOpen(false)}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/60 transition-colors group"
+                      >
+                        <SettingsIcon className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all stroke-[2]" />
+                        <span>Settings</span>
+                      </Link>
+                    </motion.div>
+                  </div>
+                </div>
+
+                <div className="h-px bg-slate-100" />
+
+                {/* CONTACT GROUP */}
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 pb-0.5">
+                    Contact
+                  </span>
+                  <motion.div whileHover={{ x: 3 }} whileTap={{ scale: 0.99, x: 0 }} transition={{ duration: 0.15 }}>
+                    <a
+                      href="mailto:sahilsleem01@gmail.com"
+                      onClick={() => setIsMenuOpen(false)}
+                      className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/60 transition-colors group"
+                    >
+                      <Mail className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all stroke-[2]" />
+                      <span>Contact</span>
+                    </a>
+                  </motion.div>
+                </div>
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
+
         {/* Viewport Content */}
-        <main className="flex-1 flex flex-col pb-24 md:pb-12 relative z-10 w-full">
+        <main className="flex-1 flex flex-col relative z-10 w-full">
           {children}
         </main>
-
-        {/* Mobile Floating Bottom Dock (hidden on desktop and detail pages) */}
-        {!isDetail && <BottomTabBar />}
       </div>
     </div>
   );

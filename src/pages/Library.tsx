@@ -5,32 +5,25 @@ import { useVaultStore } from '@/store/useVaultStore';
 import { ingestImageFiles } from '@/lib/file-processing';
 import { ScrapItBroLogo } from '@/components/ui/ScrapItBroLogo';
 import { Footer } from '@/components/layout/Footer';
+import { PinUnlockScreen } from '@/components/ui/PinUnlockScreen';
+import { heroContainer, heroChild, tabPillTransition } from '@/lib/motion';
 import type { VaultFilter } from '@/types';
 import {
   Heart,
-  Lock,
   UploadCloud,
   AlertCircle,
   CheckCircle2,
   X,
   Loader2,
   Plus,
-  Eye,
-  ShieldCheck,
-  Sparkles,
-  SlidersHorizontal,
-  ChevronDown,
-  ChevronUp,
   Image as ImageIcon,
-  ArrowDown
+  ShieldCheck
 } from 'lucide-react';
 
 const FILTER_TABS: { key: VaultFilter; label: string }[] = [
   { key: 'all', label: 'All' },
   { key: 'favorites', label: 'Favorites' },
 ];
-
-const SHOWCASE_HIDE_PREF_KEY = 'photovault:hide_showcase';
 
 function formatGridDate(dateString?: string): string {
   if (!dateString) return '';
@@ -65,7 +58,6 @@ export const Library: React.FC = () => {
     setFilter,
     toggleFavorite,
     isVaultLocked,
-    toggleLock,
     ingestionQueue,
     clearCompletedTasks,
     duplicateAlerts,
@@ -73,36 +65,12 @@ export const Library: React.FC = () => {
   } = useVaultStore();
 
   const [isDragging, setIsDragging] = useState(false);
-  
-  // Persistent user preference for showcase visibility (OPEN by default on fresh visits)
-  const [isHideShowcasePreference, setIsHideShowcasePreference] = useState<boolean>(() => {
-    try {
-      return localStorage.getItem(SHOWCASE_HIDE_PREF_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
 
   const dragCounter = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const wasIngestingRef = useRef(false);
 
   const hasPhotos = photos.length > 0;
-  const showFeatureShowcase = !isHideShowcasePreference;
-
-  const handleHideShowcase = () => {
-    setIsHideShowcasePreference(true);
-    try {
-      localStorage.setItem(SHOWCASE_HIDE_PREF_KEY, 'true');
-    } catch {}
-  };
-
-  const handleShowShowcase = () => {
-    setIsHideShowcasePreference(false);
-    try {
-      localStorage.removeItem(SHOWCASE_HIDE_PREF_KEY);
-    } catch {}
-  };
 
   // Listen for navigation events to smoothly scroll to photos
   useEffect(() => {
@@ -231,36 +199,15 @@ export const Library: React.FC = () => {
   // Vault Locked State
   if (isVaultLocked) {
     return (
-      <div className="flex-1 min-h-[75vh] flex flex-col items-center justify-center p-6 text-center">
-        <motion.div
-          initial={{ scale: 0.85, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ type: 'spring', stiffness: 350, damping: 22 }}
-          className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center mb-5 text-indigo-600 shadow-xs"
-        >
-          <Lock className="w-8 h-8 stroke-[2]" />
-        </motion.div>
-        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
-          Your Vault is Locked
-        </h2>
-        <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
-          Your photos are encrypted on this device. Unlock to view your gallery.
-        </p>
-        <motion.button
-          whileHover={{ scale: 1.03 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: 'spring', stiffness: 450, damping: 20 }}
-          onClick={toggleLock}
-          className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-md shadow-indigo-500/20 transition-colors cursor-pointer"
-        >
-          Unlock Vault
-        </motion.button>
+      <div className="flex flex-col relative min-h-full px-4 sm:px-8 pt-4 sm:pt-6 pb-0 max-w-6xl mx-auto w-full">
+        <PinUnlockScreen />
+        <Footer />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col relative min-h-full px-4 sm:px-8 pt-4 sm:pt-6 pb-12 max-w-6xl mx-auto w-full">
+    <div className="flex flex-col relative min-h-full px-4 sm:px-8 pt-4 sm:pt-6 pb-0 max-w-6xl mx-auto w-full">
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
@@ -472,233 +419,67 @@ export const Library: React.FC = () => {
         )}
       </AnimatePresence>
 
+
+
       {/* =========================================================================
-          HERO & FEATURE SHOWCASE SECTION (Concept #8 - "Feature Showcase")
+          HERO / INTRO SECTION (Headline, Human Explanation, and Primary CTAs)
           ========================================================================= */}
-      {showFeatureShowcase ? (
-        <section className="mb-8 sm:mb-12 flex flex-col items-center text-center">
-          {/* Subtle Privacy Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold mb-3 sm:mb-4 shadow-2xs"
-          >
-            <ShieldCheck className="w-3.5 h-3.5 stroke-[2.2]" />
-            <span>Private & On-Device</span>
-          </motion.div>
+      <motion.section
+        variants={heroContainer}
+        initial="hidden"
+        animate="visible"
+        className="mb-6 sm:mb-12 flex flex-col items-center text-center"
+      >
+        {/* Subtle Privacy Badge with One-time trust entrance */}
+        <motion.div
+          variants={heroChild}
+          className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-600 text-xs font-semibold mb-3 sm:mb-4 shadow-2xs"
+        >
+          <ShieldCheck className="w-3.5 h-3.5 stroke-[2.2]" />
+          <span>Private &amp; On-Device</span>
+        </motion.div>
 
-          {/* Primary Headline */}
-          <motion.h1
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15] max-w-2xl"
-          >
-            Photos,{' '}
-            <span className="text-indigo-600">but private.</span>
-          </motion.h1>
+        {/* Primary Headline */}
+        <motion.h1
+          variants={heroChild}
+          className="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 leading-[1.15] max-w-2xl"
+        >
+          Photos,{' '}
+          <span className="text-indigo-600">but private.</span>
+        </motion.h1>
 
-          {/* Short Human Explanation */}
-          <motion.p
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.1 }}
-            className="text-sm sm:text-base text-slate-600 max-w-xl mt-3 sm:mt-4 leading-relaxed font-normal"
-          >
-            See what’s hidden inside your photos. Understand the information they contain. Keep your originals untouched and create cleaner copies when you need them.
-          </motion.p>
+        {/* Short Human Explanation */}
+        <motion.p
+          variants={heroChild}
+          className="text-sm sm:text-base text-slate-600 max-w-xl mt-3 sm:mt-4 leading-relaxed font-normal"
+        >
+          See what’s hidden inside your photos. Understand the information they contain. Keep your originals untouched and create cleaner copies when you need them.
+        </motion.p>
 
-          {/* Hero CTAs */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.15 }}
-            className="mt-6 sm:mt-7 flex flex-col items-center gap-2.5 w-full sm:w-auto"
-          >
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 sm:gap-3 w-full sm:w-auto">
-              {/* Primary Add Photos CTA */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full sm:w-auto px-7 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm sm:text-base shadow-md shadow-indigo-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5]" />
-                <span>Add Photos</span>
-              </motion.button>
-
-              {/* Secondary Shortcut to Existing Library */}
-              {hasPhotos && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.96 }}
-                  transition={{ type: 'spring', stiffness: 500, damping: 25 }}
-                  onClick={scrollToPhotosSection}
-                  className="w-full sm:w-auto px-5 py-3 rounded-2xl bg-white hover:bg-slate-50 text-slate-700 font-semibold text-sm sm:text-base border border-slate-200/80 shadow-2xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <span>View Your Photos</span>
-                  <ArrowDown className="w-4 h-4 text-indigo-600 stroke-[2.2]" />
-                </motion.button>
-              )}
-            </div>
-
-            <span className="text-[11px] text-slate-400 font-medium mt-0.5">
-              Processed locally on this device · Originals are never modified
-            </span>
-          </motion.div>
-
-          {/* 4 Core Capabilities Grid */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.2 }}
-            className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 mt-8 sm:mt-10 w-full max-w-3xl text-left"
-          >
-            {/* Card 1: Discover Hidden Information */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1.5">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <Eye className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
-                      Discover Hidden Information
-                    </h3>
-                    <p className="text-[11px] font-medium text-indigo-600">
-                      See the details your photos carry.
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                  Camera information, timestamps, locations, lens details, and other embedded metadata.
-                </p>
-              </div>
-            </div>
-
-            {/* Card 2: Keep Your Original Safe */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1.5">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <ShieldCheck className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
-                      Keep Your Original Safe
-                    </h3>
-                    <p className="text-[11px] font-medium text-indigo-600">
-                      Your original photo stays untouched.
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                  ScrapItBro keeps your original file exactly as you added it — without resizing or recompressing it.
-                </p>
-              </div>
-            </div>
-
-            {/* Card 3: Clean & Export */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1.5">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <Sparkles className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
-                      Clean & Export
-                    </h3>
-                    <p className="text-[11px] font-medium text-indigo-600">
-                      Remove hidden metadata from a separate copy.
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                  Create a cleaner copy when you want to share a photo without supported metadata.
-                </p>
-              </div>
-            </div>
-
-            {/* Card 4: Your Privacy, Your Control */}
-            <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-xs hover:shadow-md transition-all flex flex-col justify-between">
-              <div>
-                <div className="flex items-center gap-3 mb-1.5">
-                  <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center flex-shrink-0">
-                    <SlidersHorizontal className="w-4 h-4 stroke-[2]" />
-                  </div>
-                  <div>
-                    <h3 className="text-xs sm:text-sm font-bold text-slate-900 tracking-tight">
-                      Your Privacy, Your Control
-                    </h3>
-                    <p className="text-[11px] font-medium text-indigo-600">
-                      Understand what your photos contain before you share them.
-                    </p>
-                  </div>
-                </div>
-                <p className="text-xs text-slate-500 leading-relaxed mt-2">
-                  Review the information inside your photos and decide what you want to keep or remove.
-                </p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* "More than just a photo gallery" Moment */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.25 }}
-            className="mt-6 w-full max-w-3xl bg-slate-50/90 border border-slate-200/60 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-left"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white border border-slate-200/80 flex items-center justify-center text-indigo-600 shadow-2xs flex-shrink-0">
-                <ImageIcon className="w-4 h-4 stroke-[1.8]" />
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold text-slate-800">
-                  More than just a photo gallery.
-                </h4>
-                <p className="text-[11px] text-slate-500">
-                  Turn invisible photo metadata into clear knowledge and total personal control.
-                </p>
-              </div>
-            </div>
-            <button
-              onClick={handleHideShowcase}
-              className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 self-end sm:self-center cursor-pointer"
+        {/* Hero CTAs */}
+        <motion.div
+          variants={heroChild}
+          className="mt-6 sm:mt-7 flex flex-col items-center gap-2.5 w-full sm:w-auto"
+        >
+          <div className="flex items-center justify-center w-full sm:w-auto">
+            {/* Primary Add Photos CTA: Settings About hover treatment (slight elevation, soft shadow, subtle icon nudge) */}
+            <motion.button
+              whileHover={{ y: -2 }}
+              whileTap={{ scale: 0.97, y: 0 }}
+              transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+              onClick={() => fileInputRef.current?.click()}
+              className="group w-full sm:w-auto px-7 py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm sm:text-base shadow-xs hover:shadow-md hover:shadow-indigo-500/20 border border-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer select-none"
             >
-              <span>Hide showcase</span>
-              <ChevronUp className="w-3.5 h-3.5" />
-            </button>
-          </motion.div>
-        </section>
-      ) : (
-        /* Compact Header when showcase is hidden by user preference */
-        <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white/80 backdrop-blur-sm border border-slate-200/70 rounded-2xl px-4 py-3 shadow-2xs">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl bg-indigo-50 border border-indigo-100/80 text-indigo-600 flex items-center justify-center flex-shrink-0">
-              <ScrapItBroLogo size={20} />
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-slate-900">
-                Photos, <span className="text-indigo-600">but private.</span>
-              </p>
-              <p className="text-[11px] text-slate-500">
-                Originals untouched · Lossless metadata cleaning
-              </p>
-            </div>
+              <Plus className="w-4 h-4 sm:w-5 sm:h-5 stroke-[2.5] group-hover:translate-x-0.5 transition-transform duration-150" />
+              <span>Add Photos</span>
+            </motion.button>
           </div>
-          <button
-            onClick={handleShowShowcase}
-            className="text-xs text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1 self-start sm:self-center cursor-pointer"
-          >
-            <span>Learn what ScrapItBro does</span>
-            <ChevronDown className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+
+          <span className="text-[11px] text-slate-400 font-medium mt-0.5">
+            Processed locally on this device · Originals are never modified
+          </span>
+        </motion.div>
+      </motion.section>
 
       {/* =========================================================================
           PHOTO LIBRARY SECTION (Your Photos, Count, Filters, Grid)
@@ -707,51 +488,47 @@ export const Library: React.FC = () => {
         <section id="your-photos" className="flex flex-col gap-4 scroll-mt-20 sm:scroll-mt-24">
           {/* Library Subheader: Title, Count, Filters, Add Photos Button */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-slate-200/60">
-            <div className="flex items-baseline gap-2.5">
+            <div className="flex items-center">
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900">
                 Your Photos
               </h2>
-              <span className="text-xs sm:text-sm text-slate-500 font-medium">
-                {filteredPhotos.length} {filteredPhotos.length === 1 ? 'photo' : 'photos'}
-              </span>
             </div>
 
             <div className="flex items-center justify-between sm:justify-end gap-2.5">
-              {/* Filter Tabs (All / Favorites only) */}
-              <div className="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
+              {/* Filter Tabs (All / Favorites only) with GPU-accelerated sliding layoutId pill */}
+              <div className="flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60 relative shadow-2xs">
                 {FILTER_TABS.map((tab) => {
                   const isActive = activeFilter === tab.key;
                   return (
-                    <button
+                    <motion.button
                       key={tab.key}
+                      whileHover={{ y: -1 }}
+                      whileTap={{ scale: 0.97, y: 0 }}
+                      transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
                       onClick={() => setFilter(tab.key)}
-                      className={`px-3 py-1 rounded-lg text-xs font-medium transition-all cursor-pointer ${
+                      className={`relative px-3.5 py-1 rounded-lg text-xs font-medium transition-colors cursor-pointer select-none ${
                         isActive
-                          ? 'bg-white text-indigo-600 font-semibold shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
+                          ? 'text-indigo-600 font-semibold'
+                          : 'text-slate-600 hover:text-indigo-600'
                       }`}
                     >
-                      {tab.label}
-                    </button>
+                      {isActive && (
+                        <motion.div
+                          layoutId="activeFilterTab"
+                          transition={tabPillTransition}
+                          className="absolute inset-0 bg-white rounded-lg shadow-xs"
+                          style={{ zIndex: 0 }}
+                        />
+                      )}
+                      <span className="relative z-10">{tab.label}</span>
+                    </motion.button>
                   );
                 })}
               </div>
-
-              {/* Add Photos Action */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.96 }}
-                transition={{ type: 'spring', stiffness: 450, damping: 20 }}
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs shadow-xs transition-colors cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                <span>Add Photos</span>
-              </motion.button>
             </div>
           </div>
 
-          {/* Main Responsive Photo Grid */}
+          {/* Main Responsive Photo Grid with Settings About visual DNA (gentle lift, subtle border, smooth shadow) */}
           {filteredPhotos.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4.5 mt-2">
               <AnimatePresence mode="popLayout">
@@ -764,26 +541,29 @@ export const Library: React.FC = () => {
                       layout
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      whileTap={{ scale: 0.97 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                      whileHover={{ y: -3.5 }}
+                      whileTap={{ scale: 0.985, y: 0 }}
                       transition={{
-                        type: 'spring',
-                        stiffness: 420,
-                        damping: 26,
-                        delay: Math.min(index * 0.02, 0.2),
+                        duration: 0.2,
+                        ease: [0.16, 1, 0.3, 1],
+                        delay: Math.min(index * 0.02, 0.12),
                       }}
-                      className="group relative aspect-square bg-slate-100 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer border border-slate-200/60 shadow-2xs hover:shadow-md transition-all select-none"
+                      className="group relative aspect-square bg-slate-100 rounded-xl sm:rounded-2xl overflow-hidden cursor-pointer border border-slate-200/70 shadow-2xs hover:shadow-lg hover:shadow-indigo-500/12 hover:border-indigo-300 transition-all duration-200 select-none"
                       onClick={() => navigate(`/photo/${encodeURIComponent(photo.id)}`)}
                     >
                       <img
                         src={photo.thumbnailUrl}
                         alt={photo.title || 'Vault photo'}
                         loading="lazy"
-                        className="w-full h-full object-cover object-center group-hover:scale-104 transition-transform duration-300 ease-out"
+                        className="w-full h-full object-cover object-center group-hover:scale-[1.03] transition-transform duration-300 ease-out"
                       />
 
                       {/* Favorite Heart Button */}
-                      <button
+                      <motion.button
+                        whileHover={{ scale: 1.08 }}
+                        whileTap={{ scale: 0.88 }}
+                        transition={{ duration: 0.15 }}
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleFavorite(photo.id);
@@ -791,20 +571,20 @@ export const Library: React.FC = () => {
                         className={`absolute top-2.5 right-2.5 p-1.5 rounded-full backdrop-blur-md transition-all cursor-pointer ${
                           photo.isFavorite
                             ? 'bg-white/95 text-rose-500 shadow-xs opacity-100'
-                            : 'bg-black/30 text-white/90 opacity-0 group-hover:opacity-100 hover:scale-110 hover:text-rose-400'
+                            : 'bg-black/35 text-white/90 opacity-0 group-hover:opacity-100 hover:text-rose-400 hover:bg-black/50'
                         }`}
                         title={photo.isFavorite ? 'Favorited' : 'Add to favorites'}
                       >
                         <Heart
-                          className={`w-3.5 h-3.5 stroke-[2.2] ${
+                          className={`w-3.5 h-3.5 stroke-[2.2] transition-colors ${
                             photo.isFavorite ? 'fill-rose-500 text-rose-500' : ''
                           }`}
                         />
-                      </button>
+                      </motion.button>
 
                       {/* Subtle Date Tag */}
                       {dateLabel && (
-                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-black/40 backdrop-blur-md text-[10px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                        <div className="absolute bottom-2 left-2 px-2 py-0.5 rounded-lg bg-black/45 backdrop-blur-md text-[10px] text-white font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-150 pointer-events-none">
                           {dateLabel}
                         </div>
                       )}
@@ -827,7 +607,7 @@ export const Library: React.FC = () => {
           )}
         </section>
       ) : (
-        /* Empty State Import Card */
+        /* Empty State Card */
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -840,21 +620,8 @@ export const Library: React.FC = () => {
           <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight mb-1.5">
             Your private photo library
           </h3>
-          <p className="text-xs sm:text-sm text-slate-500 mb-5 leading-relaxed">
-            Add your first photos to see what they contain and keep them under your control.
-          </p>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.96 }}
-            transition={{ type: 'spring', stiffness: 450, damping: 20 }}
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[2.5]" />
-            <span>Add Photos</span>
-          </motion.button>
-          <p className="text-[11px] text-slate-400 mt-3 font-medium">
-            or drag & drop images anywhere on screen
+          <p className="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-xs">
+            Add photos using the button above, or drag and drop image files anywhere on the screen.
           </p>
         </motion.div>
       )}

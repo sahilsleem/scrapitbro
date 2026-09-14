@@ -12,6 +12,7 @@ interface Particle {
 
 export const DarkroomConstellation: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const [isEnabled, setIsEnabled] = useState<boolean>(() => {
     try {
       return localStorage.getItem('photovault:ambient_particles') !== 'false';
@@ -20,6 +21,7 @@ export const DarkroomConstellation: React.FC = () => {
     }
   });
 
+  // Listen for ambient particle toggle from Settings
   useEffect(() => {
     const handleParticlesChanged = (e: any) => {
       if (typeof e.detail === 'boolean') {
@@ -34,10 +36,10 @@ export const DarkroomConstellation: React.FC = () => {
     return () => window.removeEventListener('vault:particles-changed', handleParticlesChanged);
   }, []);
 
+  // Canvas particle constellation simulation
   useEffect(() => {
     if (!isEnabled) return;
 
-    // Respect prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
 
@@ -51,28 +53,26 @@ export const DarkroomConstellation: React.FC = () => {
     let width = (canvas.width = canvas.parentElement?.clientWidth || window.innerWidth);
     let height = (canvas.height = canvas.parentElement?.clientHeight || window.innerHeight);
 
-    // Subtle Lavender & Indigo network palette
     const colors = [
       'rgba(99, 102, 241, ',   // Indigo
       'rgba(139, 92, 246, ',   // Violet
-      'rgba(168, 85, 247, ',   // Purple
     ];
 
-    // Calm, sparse particle count
-    const particleCount = width < 480 ? 16 : 24;
-    const maxDistance = width < 480 ? 70 : 90;
+    const particleCount = width < 480 ? 12 : 18;
+    const maxDistance = width < 480 ? 60 : 80;
 
     const particles: Particle[] = Array.from({ length: particleCount }, () => ({
       x: Math.random() * width,
       y: Math.random() * height,
-      vx: (Math.random() - 0.5) * 0.2,
-      vy: (Math.random() - 0.5) * 0.2,
-      radius: Math.random() * 1.2 + 0.8,
+      vx: (Math.random() - 0.5) * 0.15,
+      vy: (Math.random() - 0.5) * 0.15,
+      radius: Math.random() * 1.0 + 0.8,
       color: colors[Math.floor(Math.random() * colors.length)],
-      alpha: Math.random() * 0.2 + 0.1,
+      alpha: Math.random() * 0.15 + 0.05,
     }));
 
     let isVisible = true;
+    let lastTime = performance.now();
 
     const handleVisibilityChange = () => {
       isVisible = document.visibilityState === 'visible';
@@ -96,8 +96,6 @@ export const DarkroomConstellation: React.FC = () => {
     window.addEventListener('resize', handleResize);
     document.addEventListener('visibilitychange', handleVisibilityChange);
 
-    let lastTime = performance.now();
-
     const render = (time: number) => {
       if (!isVisible) return;
 
@@ -106,7 +104,6 @@ export const DarkroomConstellation: React.FC = () => {
 
       ctx.clearRect(0, 0, width, height);
 
-      // Update and draw particles
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
 
@@ -130,7 +127,7 @@ export const DarkroomConstellation: React.FC = () => {
           const dist = Math.sqrt(dx * dx + dy * dy);
 
           if (dist < maxDistance) {
-            const lineAlpha = (1 - dist / maxDistance) * 0.1;
+            const lineAlpha = (1 - dist / maxDistance) * 0.06;
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
@@ -153,13 +150,38 @@ export const DarkroomConstellation: React.FC = () => {
     };
   }, [isEnabled]);
 
-  if (!isEnabled) return null;
-
   return (
-    <canvas
-      ref={canvasRef}
-      className="fixed inset-0 w-full h-full pointer-events-none opacity-25 z-0"
-      aria-hidden="true"
-    />
+    <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
+      {/* 3 Prominently Visible Drifting Brand Blobs (Indigo & Violet, radial glow, smooth GPU translate loop) */}
+      <div
+        className="absolute top-[-8%] left-[-6%] w-[55vw] h-[55vw] max-w-[620px] max-h-[620px] rounded-full blur-2xl animate-drift-blob-1"
+        style={{
+          background: 'radial-gradient(circle, rgba(99, 102, 241, 0.38) 0%, rgba(129, 140, 248, 0.20) 45%, rgba(99, 102, 241, 0) 72%)',
+          willChange: 'transform'
+        }}
+      />
+      <div
+        className="absolute top-[20%] right-[-8%] w-[58vw] h-[58vw] max-w-[680px] max-h-[680px] rounded-full blur-3xl animate-drift-blob-2"
+        style={{
+          background: 'radial-gradient(circle, rgba(139, 92, 246, 0.35) 0%, rgba(167, 139, 250, 0.18) 45%, rgba(139, 92, 246, 0) 72%)',
+          willChange: 'transform'
+        }}
+      />
+      <div
+        className="absolute bottom-[-12%] left-[18%] w-[50vw] h-[50vw] max-w-[580px] max-h-[580px] rounded-full blur-2xl animate-drift-blob-3"
+        style={{
+          background: 'radial-gradient(circle, rgba(79, 70, 229, 0.32) 0%, rgba(99, 102, 241, 0.16) 45%, rgba(79, 70, 229, 0) 72%)',
+          willChange: 'transform'
+        }}
+      />
+
+      {/* Subtle Ambient Particle Canvas */}
+      {isEnabled && (
+        <canvas
+          ref={canvasRef}
+          className="absolute inset-0 w-full h-full opacity-40"
+        />
+      )}
+    </div>
   );
 };

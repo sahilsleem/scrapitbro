@@ -64,7 +64,7 @@ export const Security: React.FC = () => {
             </h2>
           </div>
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-            ScrapItBro's vault lock is a browser-level application control. When the vault is locked, protected photo views and detail routes are guarded until the vault is unlocked. The lock state persists in your browser's local storage and synchronizes across open tabs in the same browser session.
+            ScrapItBro provides an optional device-local PIN lock powered by Web Crypto PBKDF2 key derivation. When enabled, photo views, previews, and detail routes remain guarded in this browser profile until your PIN is verified. Sensitive photo materials are not loaded into memory while locked, and lock state synchronizes across open tabs.
           </p>
         </section>
 

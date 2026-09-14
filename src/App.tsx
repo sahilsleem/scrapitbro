@@ -1,5 +1,6 @@
 import React, { useLayoutEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence, motion } from 'framer-motion';
 import { MobileShell } from '@/components/layout/MobileShell';
 import { Library } from '@/pages/Library';
 import { PhotoDetail } from '@/pages/PhotoDetail';
@@ -25,12 +26,20 @@ const ScrollToTop: React.FC = () => {
   return null;
 };
 
-export const App: React.FC = () => {
+const AnimatedRoutes: React.FC = () => {
+  const location = useLocation();
+
   return (
-    <BrowserRouter>
-      <ScrollToTop />
-      <MobileShell>
-        <Routes>
+    <AnimatePresence mode="wait">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -6 }}
+        transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
+        className="flex-1 flex flex-col w-full"
+      >
+        <Routes location={location}>
           <Route path="/" element={<Library />} />
           <Route path="/photo/:id" element={<PhotoDetail />} />
           <Route path="/settings" element={<Settings />} />
@@ -41,6 +50,17 @@ export const App: React.FC = () => {
           <Route path="/security" element={<Security />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+      </motion.div>
+    </AnimatePresence>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <BrowserRouter>
+      <ScrollToTop />
+      <MobileShell>
+        <AnimatedRoutes />
       </MobileShell>
     </BrowserRouter>
   );
