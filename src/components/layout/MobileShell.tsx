@@ -74,7 +74,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
                     }
                   }}
                   className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       isActive
                         ? 'bg-white text-indigo-600 font-semibold shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'
@@ -85,9 +85,45 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
                   <span>Photos</span>
                 </NavLink>
                 <NavLink
+                  to="/about"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  About
+                </NavLink>
+                <NavLink
+                  to="/how-it-works"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  How It Works
+                </NavLink>
+                <NavLink
+                  to="/security"
+                  className={({ isActive }) =>
+                    `px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                      isActive
+                        ? 'bg-white text-indigo-600 font-semibold shadow-xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`
+                  }
+                >
+                  Security
+                </NavLink>
+                <NavLink
                   to="/settings"
                   className={({ isActive }) =>
-                    `flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                    `flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all ${
                       isActive
                         ? 'bg-white text-indigo-600 font-semibold shadow-xs'
                         : 'text-slate-600 hover:text-slate-900'

@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useVaultStore } from '@/store/useVaultStore';
 import { ingestImageFiles } from '@/lib/file-processing';
 import { ScrapItBroLogo } from '@/components/ui/ScrapItBroLogo';
+import { Footer } from '@/components/layout/Footer';
 import type { VaultFilter } from '@/types';
 import {
   Heart,
@@ -857,6 +858,9 @@ export const Library: React.FC = () => {
           </p>
         </motion.div>
       )}
+
+      {/* Shared ScrapItBro Footer */}
+      <Footer />
     </div>
   );
 };

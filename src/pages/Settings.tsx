@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useVaultStore } from '@/store/useVaultStore';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { motion } from 'framer-motion';
@@ -280,9 +281,55 @@ export const Settings: React.FC = () => {
       )}
 
       {/* =========================================================================
-          6. ABOUT SECTION
+          6. LEARN & LEGAL SECTION
           ========================================================================= */}
-      <div className="text-center pt-4 pb-8 flex flex-col items-center gap-1">
+      <div className="flex flex-col gap-2">
+        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider px-1">
+          Learn &amp; Legal
+        </span>
+        <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-xs flex flex-col divide-y divide-slate-100 text-xs font-medium text-slate-700">
+          <Link
+            to="/about"
+            className="py-2.5 px-2 hover:text-indigo-600 flex items-center justify-between transition-colors"
+          >
+            <span>About ScrapItBro</span>
+            <span className="text-slate-400 text-sm">&rarr;</span>
+          </Link>
+          <Link
+            to="/how-it-works"
+            className="py-2.5 px-2 hover:text-indigo-600 flex items-center justify-between transition-colors"
+          >
+            <span>How It Works</span>
+            <span className="text-slate-400 text-sm">&rarr;</span>
+          </Link>
+          <Link
+            to="/security"
+            className="py-2.5 px-2 hover:text-indigo-600 flex items-center justify-between transition-colors"
+          >
+            <span>Security &amp; Privacy Architecture</span>
+            <span className="text-slate-400 text-sm">&rarr;</span>
+          </Link>
+          <Link
+            to="/privacy"
+            className="py-2.5 px-2 hover:text-indigo-600 flex items-center justify-between transition-colors"
+          >
+            <span>Privacy Policy</span>
+            <span className="text-slate-400 text-sm">&rarr;</span>
+          </Link>
+          <Link
+            to="/terms"
+            className="py-2.5 px-2 hover:text-indigo-600 flex items-center justify-between transition-colors"
+          >
+            <span>Terms of Use</span>
+            <span className="text-slate-400 text-sm">&rarr;</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* =========================================================================
+          7. ABOUT BRAND
+          ========================================================================= */}
+      <div className="text-center pt-2 pb-8 flex flex-col items-center gap-1">
         <p className="text-xs font-semibold text-slate-500">
           ScrapItBro · Version 0.1.0 (Stable)
         </p>
