@@ -46,9 +46,9 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
   }, [metaTitle, metaDescription]);
 
   return (
-    <div className="flex flex-col w-full flex-1">
+    <div className="flex flex-col w-full flex-1 max-w-4xl mx-auto px-4 sm:px-8">
       {/* Main Page Container */}
-      <div className="flex-1 w-full max-w-4xl mx-auto px-4 sm:px-8 py-4 sm:py-8 flex flex-col gap-4 sm:gap-8">
+      <div className="flex-1 w-full py-4 sm:py-8 flex flex-col gap-4 sm:gap-8">
         {/* Breadcrumb Back Link */}
         <div>
           <Link

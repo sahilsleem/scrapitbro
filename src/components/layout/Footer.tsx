@@ -5,11 +5,11 @@ import { ShieldCheck } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="w-full mt-6 sm:mt-16 border-t border-slate-200/80 bg-white/70 backdrop-blur-md relative z-10 transition-colors">
-      <div className="max-w-6xl mx-auto px-3.5 sm:px-8 pt-4 sm:pt-8 pb-3 sm:pb-5 flex flex-col gap-3.5 sm:gap-6">
+    <footer className="w-full mt-8 sm:mt-16 mb-6 sm:mb-10 vault-glass-panel rounded-2xl sm:rounded-3xl p-4 sm:p-6 md:p-8 relative z-10 transition-colors">
+      <div className="flex flex-col gap-4 sm:gap-6">
         
         {/* Main 2-Half Grid on Mobile & Desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-3.5 sm:gap-8 md:gap-10">
+        <div className="grid grid-cols-2 md:grid-cols-12 gap-4 sm:gap-8 md:gap-10">
           
           {/* LEFT SIDE: Brand, Tagline, Short Description, Badge (50% on mobile, 6 cols on desktop) */}
           <div className="col-span-1 md:col-span-6 flex flex-col gap-1.5 sm:gap-2.5">
@@ -32,14 +32,14 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* RIGHT SIDE: Navigation Links (50% on mobile, 6 cols on desktop) */}
-          <div className="col-span-1 md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-4 md:gap-8 text-[10px] sm:text-xs">
+          <div className="col-span-1 md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-8 text-[10px] sm:text-xs">
             
             {/* Group 1: Learn / Info */}
             <div className="flex flex-col gap-1 sm:gap-2">
               <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 Learn
               </span>
-              <ul className="flex flex-col gap-0.5 sm:gap-1.5 font-medium text-slate-600">
+              <ul className="flex flex-col gap-1 sm:gap-1.5 font-medium text-slate-600">
                 <li>
                   <Link
                     to="/about"
@@ -72,7 +72,7 @@ export const Footer: React.FC = () => {
               <span className="text-[9px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                 Privacy &amp; Legal
               </span>
-              <ul className="flex flex-col gap-0.5 sm:gap-1.5 font-medium text-slate-600">
+              <ul className="flex flex-col gap-1 sm:gap-1.5 font-medium text-slate-600">
                 <li>
                   <Link
                     to="/privacy"
@@ -97,7 +97,7 @@ export const Footer: React.FC = () => {
         </div>
 
         {/* Compact Bottom Copyright Row */}
-        <div className="pt-2 sm:pt-4 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-1 text-[9px] sm:text-[11px] text-slate-400">
+        <div className="pt-3 sm:pt-4 border-t border-slate-200/60 flex flex-col sm:flex-row items-center justify-between gap-1 text-[9px] sm:text-[11px] text-slate-400">
           <div className="flex items-center gap-1.5 text-center sm:text-left">
             <span>&copy; 2026 ScrapItBro</span>
             <span>&middot;</span>
