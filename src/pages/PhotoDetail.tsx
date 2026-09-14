@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect, useLayoutEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useVaultStore } from '@/store/useVaultStore';
 import { getPhotoFromDB } from '@/lib/db';
@@ -18,21 +18,22 @@ import {
   ExternalLink,
   Download,
   CheckCircle2,
-  Shield,
   Loader2,
   AlertCircle,
   ChevronLeft,
   ChevronRight,
   Copy,
   Check,
-  ShieldCheck,
   Hash,
   MapPin,
   Camera,
   Clock,
   Image as ImageIcon,
   Cpu,
-  Layers
+  Layers,
+  Sparkles,
+  Shield,
+  Lock
 } from 'lucide-react';
 
 export const PhotoDetail: React.FC = () => {
@@ -40,7 +41,7 @@ export const PhotoDetail: React.FC = () => {
   const id = rawId ? decodeURIComponent(rawId) : '';
   const navigate = useNavigate();
 
-  const { photos, toggleFavorite, deletePhoto, isInitialized } = useVaultStore();
+  const { photos, toggleFavorite, deletePhoto, isInitialized, isVaultLocked, toggleLock } = useVaultStore();
 
   const storePhoto = photos.find((p) => p.id === id);
   const [localPhoto, setLocalPhoto] = useState<PhotoItem | null>(storePhoto || null);
@@ -60,8 +61,27 @@ export const PhotoDetail: React.FC = () => {
   const prevPhoto = currentIndex > 0 ? photos[currentIndex - 1] : null;
   const nextPhoto = currentIndex >= 0 && currentIndex < photos.length - 1 ? photos[currentIndex + 1] : null;
 
+  // Guarantee viewport always starts at the top for every photo
+  useLayoutEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [id]);
+
+  // Set scrollRestoration to manual while viewing PhotoDetail
+  useEffect(() => {
+    if ('scrollRestoration' in window.history) {
+      const prevRestoration = window.history.scrollRestoration;
+      window.history.scrollRestoration = 'manual';
+      return () => {
+        window.history.scrollRestoration = prevRestoration;
+      };
+    }
+  }, []);
+
   // Keyboard navigation (ArrowLeft, ArrowRight, Escape)
   useEffect(() => {
+    if (isVaultLocked) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft' && prevPhoto) {
         navigate(`/photo/${encodeURIComponent(prevPhoto.id)}`);
@@ -73,9 +93,10 @@ export const PhotoDetail: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [prevPhoto, nextPhoto, navigate]);
+  }, [prevPhoto, nextPhoto, navigate, isVaultLocked]);
 
   useEffect(() => {
+    if (isVaultLocked) return;
     let isMounted = true;
     let localCreatedFullUrl: string | null = null;
     let localCreatedThumbUrl: string | null = null;
@@ -159,12 +180,43 @@ export const PhotoDetail: React.FC = () => {
     };
   }, [id, photos, isInitialized]);
 
+  // Vault Locked State
+  if (isVaultLocked) {
+    return (
+      <div className="flex-1 min-h-[75vh] flex flex-col items-center justify-center p-6 text-center">
+        <motion.div
+          initial={{ scale: 0.85, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ type: 'spring', stiffness: 350, damping: 22 }}
+          className="w-16 h-16 rounded-3xl bg-indigo-50 border border-indigo-100/80 flex items-center justify-center mb-5 text-indigo-600 shadow-xs"
+        >
+          <Lock className="w-8 h-8 stroke-[2]" />
+        </motion.div>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight mb-2">
+          Your Vault is Locked
+        </h2>
+        <p className="text-sm text-slate-500 max-w-sm mb-6 leading-relaxed">
+          Your photos are encrypted on this device. Unlock to view your gallery.
+        </p>
+        <motion.button
+          whileHover={{ scale: 1.03 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: 'spring', stiffness: 450, damping: 20 }}
+          onClick={toggleLock}
+          className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-sm shadow-md shadow-indigo-500/20 transition-colors cursor-pointer"
+        >
+          Unlock Vault
+        </motion.button>
+      </div>
+    );
+  }
+
   const currentPhoto = photos.find((p) => p.id === id) || localPhoto;
 
   if (isLoading) {
     return (
       <div className="flex-1 min-h-[70vh] flex flex-col items-center justify-center p-6 text-center">
-        <Loader2 className="w-7 h-7 text-indigo-600 animate-spin mb-3" />
+        <Loader2 className="w-8 h-8 text-indigo-600 animate-spin mb-3" />
         <p className="text-xs font-medium text-slate-600">
           Loading photo...
         </p>
@@ -186,7 +238,7 @@ export const PhotoDetail: React.FC = () => {
         </p>
         <button
           onClick={() => navigate('/')}
-          className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium text-xs hover:bg-indigo-700 transition-colors shadow-xs"
+          className="px-5 py-2.5 rounded-xl bg-indigo-600 text-white font-medium text-xs hover:bg-indigo-700 transition-colors shadow-xs cursor-pointer"
         >
           Return to Library
         </button>
@@ -288,6 +340,10 @@ export const PhotoDetail: React.FC = () => {
     ? `${(currentPhoto.fileSizeBytes / (1024 * 1024)).toFixed(2)} MB`
     : '';
 
+  const formattedFormat = currentPhoto.mimeType
+    ? currentPhoto.mimeType.replace(/^image\//, '').toUpperCase()
+    : 'IMAGE';
+
   const formattedDims = currentPhoto.dimensions?.width && currentPhoto.dimensions?.height
     ? `${currentPhoto.dimensions.width} × ${currentPhoto.dimensions.height}`
     : '';
@@ -313,26 +369,27 @@ export const PhotoDetail: React.FC = () => {
   };
 
   return (
-    <div className="flex-1 flex flex-col min-h-screen pb-20">
+    <div className="flex-1 flex flex-col min-h-screen pb-24">
       {/* Top Header Controls */}
-      <div className="px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-20">
-        <button
-          onClick={() => navigate('/')}
-          className="flex items-center gap-1.5 text-slate-600 hover:text-indigo-600 text-xs font-semibold transition-colors"
+      <header className="px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-slate-200/80 bg-white/90 backdrop-blur-md sticky top-0 z-20 transition-colors">
+        <Link
+          to="/"
+          className="flex items-center gap-1.5 text-slate-700 hover:text-indigo-600 text-xs sm:text-sm font-semibold transition-colors group"
         >
-          <ArrowLeft className="w-4 h-4 stroke-[2.2]" />
+          <ArrowLeft className="w-4 h-4 stroke-[2.2] group-hover:-translate-x-0.5 transition-transform" />
           <span>Photos</span>
-        </button>
+        </Link>
 
-        {/* Previous / Next Navigation for Desktop */}
-        <div className="flex items-center gap-2">
+        {/* Previous / Next Navigation for Desktop & Actions */}
+        <div className="flex items-center gap-2 sm:gap-3">
           {photos.length > 1 && (
-            <div className="hidden sm:flex items-center gap-1 bg-slate-100/70 p-1 rounded-xl border border-slate-200/60">
+            <div className="hidden sm:flex items-center gap-1 bg-slate-100/80 p-1 rounded-xl border border-slate-200/60">
               <button
                 disabled={!prevPhoto}
                 onClick={() => prevPhoto && navigate(`/photo/${encodeURIComponent(prevPhoto.id)}`)}
-                className="p-1 rounded-lg text-slate-600 hover:text-slate-900 disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 disabled:opacity-30 transition-colors cursor-pointer"
                 title="Previous Photo (←)"
+                aria-label="Previous Photo"
               >
                 <ChevronLeft className="w-4 h-4 stroke-[2]" />
               </button>
@@ -342,8 +399,9 @@ export const PhotoDetail: React.FC = () => {
               <button
                 disabled={!nextPhoto}
                 onClick={() => nextPhoto && navigate(`/photo/${encodeURIComponent(nextPhoto.id)}`)}
-                className="p-1 rounded-lg text-slate-600 hover:text-slate-900 disabled:opacity-30 transition-colors"
+                className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 disabled:opacity-30 transition-colors cursor-pointer"
                 title="Next Photo (→)"
+                aria-label="Next Photo"
               >
                 <ChevronRight className="w-4 h-4 stroke-[2]" />
               </button>
@@ -356,12 +414,13 @@ export const PhotoDetail: React.FC = () => {
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 500, damping: 25 }}
             onClick={() => toggleFavorite(currentPhoto.id)}
-            className={`p-2 rounded-xl border transition-all ${
+            className={`p-2 rounded-xl border transition-all cursor-pointer ${
               currentPhoto.isFavorite
                 ? 'bg-rose-50 border-rose-200 text-rose-500 shadow-2xs'
                 : 'bg-white border-slate-200/80 text-slate-400 hover:text-rose-500'
             }`}
             title={currentPhoto.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={currentPhoto.isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
             <Heart
               className={`w-4 h-4 stroke-[2.2] ${
@@ -373,13 +432,14 @@ export const PhotoDetail: React.FC = () => {
           {/* Delete Button */}
           <button
             onClick={handleDelete}
-            className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all"
-            title="Delete photo"
+            className="p-2 rounded-xl bg-white border border-slate-200/80 text-slate-400 hover:text-rose-600 hover:bg-rose-50 hover:border-rose-200 transition-all cursor-pointer"
+            title="Delete photo from vault"
+            aria-label="Delete photo"
           >
             <Trash2 className="w-4 h-4 stroke-[2]" />
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Scrub Feedback Notice */}
       <AnimatePresence>
@@ -397,20 +457,21 @@ export const PhotoDetail: React.FC = () => {
       </AnimatePresence>
 
       {/* Main Content Body */}
-      <div className="p-4 sm:p-8 max-w-4xl mx-auto w-full flex flex-col gap-8">
+      <div className="p-4 sm:p-8 max-w-4xl mx-auto w-full flex flex-col gap-6 sm:gap-8">
+        
         {/* ========================================================================= */}
-        {/* 1. PHOTO (THE HERO)                                                       */}
+        {/* 1. PHOTO-FIRST HERO                                                       */}
         {/* ========================================================================= */}
-        <div className="flex flex-col gap-3">
+        <section className="flex flex-col gap-3">
           <motion.div
             initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-            className="w-full relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950 border border-slate-200/60 shadow-md flex items-center justify-center min-h-[320px] max-h-[72vh]"
+            className="w-full relative rounded-2xl sm:rounded-3xl overflow-hidden bg-slate-950/95 border border-slate-200/80 shadow-md flex items-center justify-center min-h-[300px] max-h-[72vh]"
           >
             <img
               src={displayImgSrc}
-              alt={currentPhoto.title || 'Photo view'}
+              alt={currentPhoto.title || 'Selected photo'}
               onError={() => {
                 if (!imgRenderError && currentPhoto.thumbnailUrl && displayImgSrc !== currentPhoto.thumbnailUrl) {
                   setImgRenderError(true);
@@ -420,52 +481,78 @@ export const PhotoDetail: React.FC = () => {
             />
           </motion.div>
 
-          {/* Clean Caption Bar */}
-          <div className="flex items-center justify-between px-1 text-xs text-slate-500">
-            <span className="font-medium truncate max-w-[280px] sm:max-w-md text-slate-800">
+          {/* Photo Summary Caption */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 px-1">
+            <span className="font-semibold text-xs sm:text-sm text-slate-800 truncate max-w-md">
               {currentPhoto.title || currentPhoto.filename}
             </span>
-            <span className="text-[11px] text-slate-400 font-medium font-mono">
-              {formattedDims} • {formattedSize}
-            </span>
+            <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+              {formattedSize && <span>{formattedSize}</span>}
+              {formattedFormat && (
+                <>
+                  <span>·</span>
+                  <span>{formattedFormat}</span>
+                </>
+              )}
+              {formattedDims && (
+                <>
+                  <span>·</span>
+                  <span className="font-mono">{formattedDims}</span>
+                </>
+              )}
+            </div>
           </div>
-        </div>
+        </section>
 
         {/* ========================================================================= */}
-        {/* 2. INFORMATION IN THIS PHOTO (100% OF EXTRACTED METADATA - NO RAW JSON)   */}
+        {/* 2. THE "WOW" MOMENT: INFORMATION IN THIS PHOTO (100% REAL METADATA)       */}
         {/* ========================================================================= */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-8">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+        <section className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-8">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-5">
             <div>
-              <h2 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+              <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+                Photo Intelligence
+              </span>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight mt-0.5">
                 Information in this photo
               </h2>
-              <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                Every detail discovered embedded inside this file when it was captured.
+              <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                Embedded details discovered inside this photo file.
               </p>
             </div>
-            <div className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100/80 text-indigo-700 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
-              <span>{totalFieldsCount} {totalFieldsCount === 1 ? 'detail' : 'details'} found inside this photo</span>
+            
+            {/* Dynamic Details Found Badge */}
+            <div className="self-start sm:self-auto inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-semibold shadow-2xs">
+              <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse flex-shrink-0" />
+              <span>
+                {totalFieldsCount > 0
+                  ? `${totalFieldsCount} ${totalFieldsCount === 1 ? 'detail' : 'details'} found inside this photo`
+                  : "Your photo doesn't contain readable embedded metadata."}
+              </span>
             </div>
           </div>
 
-          {/* Render All Dynamically Discovered Sections */}
+          {/* Dynamic 2-Column Metadata Sections */}
           {sections.map((section, secIdx) => (
-            <div key={section.id} className={`flex flex-col gap-4 ${secIdx > 0 ? 'pt-6 border-t border-slate-100' : ''}`}>
+            <div
+              key={section.id}
+              className={`flex flex-col gap-4 ${secIdx > 0 ? 'pt-6 border-t border-slate-100' : ''}`}
+            >
               <div className="flex items-center gap-2">
-                {getSectionIcon(section.id)}
-                <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100/70 flex items-center justify-center flex-shrink-0">
+                  {getSectionIcon(section.id)}
+                </div>
+                <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
                   {section.title}
                 </h3>
                 {section.description && (
-                  <span className="hidden sm:inline text-[11px] text-slate-400 font-normal ml-2">
+                  <span className="hidden sm:inline text-[11px] text-slate-400 font-normal ml-1">
                     — {section.description}
                   </span>
                 )}
               </div>
 
-              {/* 2-Column Responsive Layout for Desktop / Stack on Mobile */}
+              {/* 2-Column Grid on Desktop, Stacked on Mobile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4">
                 {section.items.map((item) => (
                   <div key={item.id} className="flex flex-col py-1.5 border-b border-slate-100/70 sm:border-b-0">
@@ -482,42 +569,46 @@ export const PhotoDetail: React.FC = () => {
           ))}
 
           {sections.length === 0 && (
-            <div className="py-6 text-xs text-slate-500 text-center">
+            <div className="py-8 text-xs text-slate-500 text-center">
               No embedded metadata found in this photo file.
             </div>
           )}
-        </div>
+        </section>
 
         {/* ========================================================================= */}
-        {/* 3. LOCATION (FACTUAL & CALM)                                              */}
+        {/* 3. LOCATION SECTION (FACTUAL & CALM)                                       */}
         {/* ========================================================================= */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-4">
-          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-            <MapPin className="w-4 h-4 text-indigo-600" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              LOCATION
-            </h3>
+        <section className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100/70 flex items-center justify-center flex-shrink-0">
+                <MapPin className="w-4 h-4 text-indigo-600" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
+                LOCATION
+              </h3>
+            </div>
           </div>
 
           {hasGps && gpsCoords ? (
-            <div className="bg-rose-50/60 border border-rose-200/80 rounded-2xl p-5 flex flex-col gap-4">
+            <div className="bg-indigo-50/40 border border-indigo-100 rounded-2xl p-5 flex flex-col gap-4">
               <div className="flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
-                <span className="text-xs font-bold text-rose-900 uppercase tracking-wider">
-                  Location information found
+                <span className="w-2 h-2 rounded-full bg-indigo-600 animate-pulse" />
+                <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                  Location details embedded in photo
                 </span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-rose-700/80 uppercase">Latitude</span>
+                  <span className="text-[11px] font-bold text-indigo-900/70 uppercase">Latitude</span>
                   <span className="text-base font-bold text-slate-900 mt-0.5 font-mono">
                     {gpsCoords.latitude >= 0 ? `${gpsCoords.latitude.toFixed(4)}° N` : `${Math.abs(gpsCoords.latitude).toFixed(4)}° S`}
                   </span>
                 </div>
 
                 <div className="flex flex-col">
-                  <span className="text-[11px] font-bold text-rose-700/80 uppercase">Longitude</span>
+                  <span className="text-[11px] font-bold text-indigo-900/70 uppercase">Longitude</span>
                   <span className="text-base font-bold text-slate-900 mt-0.5 font-mono">
                     {gpsCoords.longitude >= 0 ? `${gpsCoords.longitude.toFixed(4)}° E` : `${Math.abs(gpsCoords.longitude).toFixed(4)}° W`}
                   </span>
@@ -525,7 +616,7 @@ export const PhotoDetail: React.FC = () => {
 
                 {gpsCoords.altitude !== undefined && (
                   <div className="flex flex-col">
-                    <span className="text-[11px] font-bold text-rose-700/80 uppercase">Altitude</span>
+                    <span className="text-[11px] font-bold text-indigo-900/70 uppercase">Altitude</span>
                     <span className="text-base font-bold text-slate-900 mt-0.5">
                       {Math.round(gpsCoords.altitude)} m
                     </span>
@@ -533,7 +624,7 @@ export const PhotoDetail: React.FC = () => {
                 )}
               </div>
 
-              <div className="pt-3 border-t border-rose-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="pt-3 border-t border-indigo-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <span className="text-xs text-slate-600 font-mono">
                   {gpsString}
                 </span>
@@ -542,93 +633,128 @@ export const PhotoDetail: React.FC = () => {
                   href={mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-rose-200 text-rose-700 hover:bg-rose-50 font-medium text-xs transition-colors self-start sm:self-auto shadow-2xs"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-indigo-200 text-indigo-700 hover:bg-indigo-50 font-medium text-xs transition-colors self-start sm:self-auto shadow-2xs cursor-pointer"
                 >
                   <span>View location on map →</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </a>
               </div>
+
+              <p className="text-[11px] text-slate-500 leading-relaxed pt-1">
+                Some photos contain location information that can reveal where they were taken.
+              </p>
             </div>
           ) : (
             <div className="flex items-center justify-between py-2 text-xs">
-              <span className="text-slate-700 font-medium">
-                No location data detected
+              <span className="text-slate-600 font-medium">
+                No location information found in this photo.
               </span>
-              <span className="text-[11px] text-slate-400 font-medium bg-slate-50 border border-slate-100 px-2.5 py-1 rounded-lg">
-                Clean (No GPS tag)
+              <span className="text-[11px] text-slate-400 font-medium bg-slate-50 border border-slate-200/80 px-2.5 py-1 rounded-lg">
+                No GPS Tag
               </span>
             </div>
           )}
-        </div>
+        </section>
 
         {/* ========================================================================= */}
         {/* 4. WHY THIS MATTERS (EDUCATIONAL & FACTUAL)                                */}
         {/* ========================================================================= */}
-        <div className="bg-slate-50/80 border border-slate-200/70 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-2.5">
+        <section className="bg-slate-50/90 border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-7 shadow-xs flex flex-col gap-2">
           <div className="flex items-center gap-2 text-xs font-bold text-slate-900 uppercase tracking-wider">
             <Shield className="w-4 h-4 text-indigo-600" />
             <span>WHY THIS MATTERS</span>
           </div>
 
           <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            Photos can contain more information than what you see in the picture. Depending on the device and app that created the file, a photo may contain details about when it was taken, what camera was used, how it was captured, and sometimes where it was taken.
+            Photos can carry more information than what you see in the image itself. Camera details, timestamps, locations, and other metadata can travel with the file when you share it.
           </p>
-          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-            PhotoVault lets you see that information before you decide what to share.
+          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
+            Knowing what's there gives you more control over what you share.
           </p>
-        </div>
+        </section>
 
         {/* ========================================================================= */}
-        {/* 5. REMOVE HIDDEN INFORMATION (PRIVACY & QUALITY-PRESERVED EXPORT)         */}
+        {/* 5. PRIVACY ACTION & EXPORT (ORIGINAL VS CLEAN COPY)                       */}
         {/* ========================================================================= */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-4">
+        <section className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-6">
           <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              PRIVACY &amp; EXPORT
+            <span className="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">
+              Privacy Actions
             </span>
-            <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
-              Remove hidden information before sharing
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 tracking-tight">
+              Export Original or Clean Copy
             </h3>
-            <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              Your original photo stays untouched. Cleaning creates a separate copy with selected hidden metadata removed.
-            </p>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Image dimensions and visual image data are preserved without intentional resizing or recompression on supported formats.
+            <p className="text-xs sm:text-sm text-slate-500 leading-relaxed">
+              Choose between exporting your untouched source master or creating a new copy with supported metadata removed.
             </p>
           </div>
 
-          <div className="pt-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-t border-slate-100">
-            <div className="text-xs text-slate-500 flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              <span>Lossless metadata strip · Processed locally on this device</span>
-            </div>
+          {/* Visual Comparison: Original vs Clean Copy */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {/* Card A: Original File */}
+            <div className="border border-slate-200/80 rounded-2xl p-5 flex flex-col justify-between gap-4 bg-slate-50/50">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+                    ORIGINAL
+                  </span>
+                  <span className="text-[10px] font-semibold text-slate-600 bg-white border border-slate-200 px-2 py-0.5 rounded-md">
+                    Source Master
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-slate-800 mt-1">
+                  Your original file stays untouched.
+                </p>
+                <p className="text-xs text-slate-500 leading-relaxed">
+                  Export the exact original file you added — preserved bit-for-bit with all original data.
+                </p>
+              </div>
 
-            <div className="flex flex-wrap items-center gap-2.5">
               <button
                 onClick={handleExportOriginal}
                 disabled={isExportingOriginal}
-                className="inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-slate-200/90 text-slate-700 hover:text-slate-900 hover:border-slate-300 font-medium text-xs sm:text-sm transition-colors shadow-2xs cursor-pointer"
-                title="Download untouched bit-exact original file"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-slate-200/90 hover:bg-slate-50 text-slate-800 font-semibold text-xs sm:text-sm transition-all shadow-2xs cursor-pointer"
+                title="Export the exact original file"
               >
-                <Download className="w-3.5 h-3.5" />
+                <Download className="w-4 h-4 text-slate-600" />
                 <span>{isExportingOriginal ? 'Exporting...' : 'Export Original'}</span>
               </button>
+            </div>
+
+            {/* Card B: Clean Copy */}
+            <div className="border border-indigo-100 rounded-2xl p-5 flex flex-col justify-between gap-4 bg-indigo-50/40">
+              <div className="flex flex-col gap-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-indigo-950 uppercase tracking-wider">
+                    CLEAN COPY
+                  </span>
+                  <span className="text-[10px] font-semibold text-indigo-700 bg-white border border-indigo-200 px-2 py-0.5 rounded-md">
+                    Lossless Strip
+                  </span>
+                </div>
+                <p className="text-xs font-semibold text-indigo-950 mt-1">
+                  Create a separate sanitized copy.
+                </p>
+                <p className="text-xs text-slate-600 leading-relaxed">
+                  Your image dimensions and pixel data are preserved without intentional recompression where supported.
+                </p>
+              </div>
 
               <motion.button
-                whileTap={{ scale: 0.95 }}
+                whileTap={{ scale: 0.96 }}
                 whileHover={{ scale: 1.02 }}
                 onClick={handleScrubMetadata}
                 disabled={isScrubbing}
-                className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs sm:text-sm shadow-xs disabled:opacity-50 transition-colors cursor-pointer"
+                className="w-full inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-md shadow-indigo-500/20 disabled:opacity-50 transition-all cursor-pointer"
               >
                 {isScrubbing ? (
                   <>
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Cleaning &amp; exporting...</span>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>Cleaning &amp; Exporting...</span>
                   </>
                 ) : (
                   <>
-                    <Download className="w-3.5 h-3.5 stroke-[2.2]" />
+                    <Sparkles className="w-4 h-4 stroke-[2.2]" />
                     <span>Clean &amp; Export Copy</span>
                   </>
                 )}
@@ -636,11 +762,12 @@ export const PhotoDetail: React.FC = () => {
             </div>
           </div>
 
+          {/* Clean Copy Verification Details */}
           {scrubResult && (
             <motion.div
-              initial={{ opacity: 0, y: 4 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-2 p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col gap-3 text-xs text-emerald-950"
+              className="p-5 rounded-2xl bg-emerald-50/70 border border-emerald-200/80 flex flex-col gap-3 text-xs text-emerald-950"
             >
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-emerald-200/60 pb-2.5">
                 <div className="flex items-center gap-2">
@@ -676,7 +803,7 @@ export const PhotoDetail: React.FC = () => {
               </div>
 
               <p className="text-emerald-900/90 leading-relaxed">
-                The original file remains untouched. This cleaned version is a separate copy downloaded as &quot;{scrubResult.downloadFilename}&quot;.
+                The original file remains untouched. This cleaned version is a separate copy downloaded as "{scrubResult.downloadFilename}".
               </p>
 
               <div className="pt-2 border-t border-emerald-200/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-emerald-800">
@@ -694,16 +821,18 @@ export const PhotoDetail: React.FC = () => {
               </div>
             </motion.div>
           )}
-        </div>
+        </section>
 
         {/* ========================================================================= */}
-        {/* 6. FILE INTEGRITY (SHA-256 DIGITAL FINGERPRINT)                           */}
+        {/* 6. FILE INTEGRITY (HUMAN-READABLE SHA-256)                                 */}
         {/* ========================================================================= */}
-        <div className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-4">
+        <section className="bg-white border border-slate-200/80 rounded-2xl sm:rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col gap-4">
           <div className="flex flex-col gap-1 border-b border-slate-100 pb-3">
             <div className="flex items-center gap-2">
-              <Hash className="w-4 h-4 text-indigo-600" />
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              <div className="w-7 h-7 rounded-lg bg-indigo-50 border border-indigo-100/70 flex items-center justify-center flex-shrink-0">
+                <Hash className="w-4 h-4 text-indigo-600" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold text-slate-900 uppercase tracking-wider">
                 FILE INTEGRITY
               </h3>
             </div>
@@ -711,17 +840,17 @@ export const PhotoDetail: React.FC = () => {
               Every file has a unique digital fingerprint.
             </p>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-              PhotoVault uses SHA-256 to create a digital fingerprint for this exact file. If the file changes, its fingerprint changes too.
+              ScrapItBro uses SHA-256 to create a fingerprint for this exact file. If the file changes, its fingerprint will normally change too.
             </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center justify-between bg-slate-50/80 border border-slate-200/70 rounded-2xl p-4 sm:p-5 gap-3">
             <div className="flex flex-col gap-1 overflow-hidden min-w-0">
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                SHA-256 FINGERPRINT
+                ORIGINAL SHA-256 FINGERPRINT
               </span>
               <span className="font-mono text-xs sm:text-sm text-slate-800 break-all select-all font-medium leading-relaxed">
-                {currentPhoto.sha256Hash || 'Calculating checksum...'}
+                {currentPhoto.sha256Hash || 'Calculating fingerprint...'}
               </span>
             </div>
 
@@ -738,7 +867,7 @@ export const PhotoDetail: React.FC = () => {
               ) : (
                 <>
                   <Copy className="w-3.5 h-3.5" />
-                  <span>Copy</span>
+                  <span>Copy Fingerprint</span>
                 </>
               )}
             </button>
@@ -749,10 +878,11 @@ export const PhotoDetail: React.FC = () => {
               Why is this useful?
             </span>
             <p className="text-xs text-indigo-950/80 leading-relaxed">
-              Your original fingerprint gives you a way to verify that the exact file you uploaded or exported has not changed.
+              It gives you a way to compare files using their SHA-256 fingerprints.
             </p>
           </div>
-        </div>
+        </section>
+
       </div>
     </div>
   );

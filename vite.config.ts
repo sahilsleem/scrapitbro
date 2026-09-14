@@ -20,9 +20,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg'],
       manifest: {
-        name: 'PhotoVault',
-        short_name: 'PhotoVault',
-        description: 'Encrypted offline-first personal darkroom photo vault',
+        name: 'ScrapItBro',
+        short_name: 'ScrapItBro',
+        description: 'Scrap the details. Keep the photo.',
         theme_color: '#08090C',
         background_color: '#08090C',
         display: 'standalone',

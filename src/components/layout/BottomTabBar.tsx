@@ -15,6 +15,12 @@ export const BottomTabBar: React.FC = () => {
         {/* Photos / Library Tab */}
         <NavLink
           to="/"
+          onClick={(e) => {
+            if (window.location.pathname === '/') {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('vault:scroll-to-photos'));
+            }
+          }}
           className={({ isActive }) =>
             `relative flex-1 flex flex-col items-center justify-center py-1.5 px-3 rounded-xl transition-colors ${
               isActive ? 'text-indigo-600 font-semibold' : 'text-slate-400 hover:text-slate-700'

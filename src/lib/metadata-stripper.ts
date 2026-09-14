@@ -1,5 +1,5 @@
 /**
- * PhotoVault Lossless Metadata Stripper
+ * ScrapItBro Lossless Metadata Stripper
  *
  * Provides bit-exact, lossless metadata removal for JPEG, PNG, and WebP formats.
  * Eliminates EXIF, GPS, XMP, IPTC, and embedded comments directly at the binary level

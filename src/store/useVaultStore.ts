@@ -64,11 +64,19 @@ function recordToPhotoItem(record: StoredPhotoRecord): PhotoItem {
   };
 }
 
+const VAULT_LOCKED_KEY = 'photovault:vault_locked';
+
 export const useVaultStore = create<VaultStore>((set, get) => ({
   photos: [],
   activeFilter: 'all',
   sortBy: 'date-desc',
-  isVaultLocked: false,
+  isVaultLocked: (() => {
+    try {
+      return localStorage.getItem(VAULT_LOCKED_KEY) === 'true';
+    } catch {
+      return false;
+    }
+  })(),
   viewMode: 'editorial',
   storageUsedBytes: 0,
   totalCapacityBytes: 10737418240, // 10 GB
@@ -80,6 +88,13 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
   initStore: async () => {
     if (get().isInitialized) return;
     try {
+      // Sync lock state across multiple tabs
+      window.addEventListener('storage', (e) => {
+        if (e.key === VAULT_LOCKED_KEY) {
+          set({ isVaultLocked: e.newValue === 'true' });
+        }
+      });
+
       const records = await getAllPhotosFromDB();
       const items = records.map(recordToPhotoItem);
       
@@ -91,7 +106,7 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
         isInitialized: true,
       });
     } catch (error) {
-      console.error('[PhotoVault Store] Failed to load photos from DB:', error);
+      console.error('[ScrapItBro Store] Failed to load photos from DB:', error);
       set({ isInitialized: true });
     }
   },
@@ -111,7 +126,18 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     await updatePhotoInDB(id, { isFavorite: newFav });
   },
 
-  toggleLock: () => set((state) => ({ isVaultLocked: !state.isVaultLocked })),
+  toggleLock: () =>
+    set((state) => {
+      const nextLocked = !state.isVaultLocked;
+      try {
+        if (nextLocked) {
+          localStorage.setItem(VAULT_LOCKED_KEY, 'true');
+        } else {
+          localStorage.removeItem(VAULT_LOCKED_KEY);
+        }
+      } catch {}
+      return { isVaultLocked: nextLocked };
+    }),
   setViewMode: (viewMode) => set({ viewMode }),
 
   addPhotoRecord: (record) => {
@@ -150,21 +176,36 @@ export const useVaultStore = create<VaultStore>((set, get) => ({
     })),
 
   removeProgressItem: (id) =>
-    set((state) => ({
-      ingestionQueue: state.ingestionQueue.filter((item) => item.id !== id),
-    })),
+    set((state) => {
+      const task = state.ingestionQueue.find((t) => t.id === id);
+      if (task?.previewUrl && task.previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(task.previewUrl);
+      }
+      return {
+        ingestionQueue: state.ingestionQueue.filter((item) => item.id !== id),
+      };
+    }),
 
   clearCompletedTasks: () =>
-    set((state) => ({
-      ingestionQueue: state.ingestionQueue.filter(
-        (item) =>
+    set((state) => {
+      const remaining: IngestionProgressItem[] = [];
+      for (const item of state.ingestionQueue) {
+        if (
           item.status === 'pending' ||
           item.status === 'hashing' ||
           item.status === 'exif' ||
           item.status === 'thumbnail' ||
           item.status === 'saving'
-      ),
-    })),
+        ) {
+          remaining.push(item);
+        } else {
+          if (item.previewUrl && item.previewUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(item.previewUrl);
+          }
+        }
+      }
+      return { ingestionQueue: remaining };
+    }),
 
   addDuplicateAlert: (alert) =>
     set((state) => ({

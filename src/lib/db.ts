@@ -39,7 +39,7 @@ export async function initVaultDatabase(): Promise<boolean> {
     await getDB();
     return true;
   } catch (error) {
-    console.error('[PhotoVault DB] Initialization error:', error);
+    console.error('[ScrapItBro DB] Initialization error:', error);
     return false;
   }
 }

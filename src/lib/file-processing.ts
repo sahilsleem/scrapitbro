@@ -282,11 +282,16 @@ export async function ingestImageFiles(files: File[]): Promise<void> {
 
   const newTasks: IngestionProgressItem[] = validFiles.map((file) => {
     const taskId = `task-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`;
+    let previewUrl: string | undefined;
+    try {
+      previewUrl = URL.createObjectURL(file);
+    } catch {}
     return {
       id: taskId,
       filename: file.name,
       status: 'pending',
       progress: 0,
+      previewUrl,
     };
   });
 

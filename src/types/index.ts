@@ -75,6 +75,7 @@ export interface IngestionProgressItem {
   progress: number;
   error?: string;
   photoId?: string;
+  previewUrl?: string;
 }
 
 export interface DuplicateAlert {

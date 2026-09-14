@@ -1,13 +1,13 @@
 import React from 'react';
 
-interface PhotoVaultLogoProps {
+export interface ScrapItBroLogoProps {
   size?: number;
   className?: string;
   showText?: boolean;
   textSize?: 'sm' | 'md' | 'lg' | 'xl';
 }
 
-export const PhotoVaultLogo: React.FC<PhotoVaultLogoProps> = ({
+export const ScrapItBroLogo: React.FC<ScrapItBroLogoProps> = ({
   size = 32,
   className = '',
   showText = false,
@@ -103,10 +103,13 @@ export const PhotoVaultLogo: React.FC<PhotoVaultLogoProps> = ({
 
       {showText && (
         <div className="flex items-center tracking-tight">
-          <span className={`text-slate-900 ${textClasses[textSize]}`}>Photo</span>
-          <span className={`text-indigo-600 ${textClasses[textSize]}`}>Vault</span>
+          <span className={`text-slate-900 ${textClasses[textSize]}`}>ScrapIt</span>
+          <span className={`text-indigo-600 ${textClasses[textSize]}`}>Bro</span>
         </div>
       )}
     </div>
   );
 };
+
+export const PhotoVaultLogo = ScrapItBroLogo;
+export type PhotoVaultLogoProps = ScrapItBroLogoProps;

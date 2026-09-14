@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Particle {
   x: number;
@@ -12,8 +12,31 @@ interface Particle {
 
 export const DarkroomConstellation: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [isEnabled, setIsEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('photovault:ambient_particles') !== 'false';
+    } catch {
+      return true;
+    }
+  });
 
   useEffect(() => {
+    const handleParticlesChanged = (e: any) => {
+      if (typeof e.detail === 'boolean') {
+        setIsEnabled(e.detail);
+      } else {
+        try {
+          setIsEnabled(localStorage.getItem('photovault:ambient_particles') !== 'false');
+        } catch {}
+      }
+    };
+    window.addEventListener('vault:particles-changed', handleParticlesChanged);
+    return () => window.removeEventListener('vault:particles-changed', handleParticlesChanged);
+  }, []);
+
+  useEffect(() => {
+    if (!isEnabled) return;
+
     // Respect prefers-reduced-motion
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (prefersReducedMotion) return;
@@ -128,7 +151,9 @@ export const DarkroomConstellation: React.FC = () => {
       window.removeEventListener('resize', handleResize);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, []);
+  }, [isEnabled]);
+
+  if (!isEnabled) return null;
 
   return (
     <canvas
