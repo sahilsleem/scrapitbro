@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Mail } from 'lucide-react';
 
 export interface InformationalPageLayoutProps {
   title: string;
@@ -106,12 +106,22 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
                   transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
                   className="w-full sm:w-auto"
                 >
-                  <Link
-                    to={ctaPrimaryLink}
-                    className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-md hover:shadow-indigo-500/20 border border-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 select-none"
-                  >
-                    <span>{ctaPrimaryText}</span>
-                  </Link>
+                  {ctaPrimaryLink.startsWith('mailto:') || ctaPrimaryLink.startsWith('http') ? (
+                    <a
+                      href={ctaPrimaryLink}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-md hover:shadow-indigo-500/20 border border-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 select-none"
+                    >
+                      <Mail className="w-4 h-4 stroke-[2]" />
+                      <span>{ctaPrimaryText}</span>
+                    </a>
+                  ) : (
+                    <Link
+                      to={ctaPrimaryLink}
+                      className="w-full sm:w-auto px-6 py-2.5 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs sm:text-sm shadow-xs hover:shadow-md hover:shadow-indigo-500/20 border border-indigo-500/30 transition-all duration-200 flex items-center justify-center gap-2 select-none"
+                    >
+                      <span>{ctaPrimaryText}</span>
+                    </Link>
+                  )}
                 </motion.div>
               )}
               {ctaSecondaryText && ctaSecondaryLink && (
