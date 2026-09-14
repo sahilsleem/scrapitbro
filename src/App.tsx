@@ -10,6 +10,7 @@ import { HowItWorks } from '@/pages/HowItWorks';
 import { Privacy } from '@/pages/Privacy';
 import { Terms } from '@/pages/Terms';
 import { Security } from '@/pages/Security';
+import { Contact } from '@/pages/Contact';
 
 const ScrollToTop: React.FC = () => {
   const { pathname, search, hash } = useLocation();
@@ -48,6 +49,7 @@ const AnimatedRoutes: React.FC = () => {
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />
           <Route path="/security" element={<Security />} />
+          <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </motion.div>

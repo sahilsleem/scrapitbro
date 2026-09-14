@@ -344,14 +344,14 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
                         Contact
                       </span>
                       <motion.div whileHover={{ x: 3 }} whileTap={{ scale: 0.99, x: 0 }} transition={{ duration: 0.15 }}>
-                        <a
-                          href="mailto:sahilsleem01@gmail.com"
+                        <Link
+                          to="/contact"
                           onClick={() => setIsMenuOpen(false)}
                           className="flex items-center gap-2.5 px-2.5 py-2 rounded-xl text-xs font-medium text-slate-700 hover:text-indigo-600 hover:bg-indigo-50/60 transition-colors group"
                         >
                           <Mail className="w-4 h-4 text-slate-500 group-hover:text-indigo-600 group-hover:translate-x-0.5 transition-all stroke-[2]" />
                           <span>Contact</span>
-                        </a>
+                        </Link>
                       </motion.div>
                     </div>
                   </motion.div>

@@ -64,6 +64,14 @@ export const Footer: React.FC = () => {
                     Security
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    to="/contact"
+                    className="inline-block hover:text-indigo-600 hover:translate-x-1 transition-all duration-180"
+                  >
+                    Contact
+                  </Link>
+                </li>
               </ul>
             </div>
 
