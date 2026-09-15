@@ -11,6 +11,7 @@ import { Privacy } from '@/pages/Privacy';
 import { Terms } from '@/pages/Terms';
 import { Security } from '@/pages/Security';
 import { Contact } from '@/pages/Contact';
+import { AnalyticsTracker } from '@/components/analytics/AnalyticsTracker';
 
 const ScrollToTop: React.FC = () => {
   const { pathname, search, hash } = useLocation();
@@ -61,6 +62,7 @@ export const App: React.FC = () => {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      <AnalyticsTracker />
       <MobileShell>
         <AnimatedRoutes />
       </MobileShell>

@@ -7,6 +7,7 @@ import { ScrapItBroLogo } from '@/components/ui/ScrapItBroLogo';
 import { Footer } from '@/components/layout/Footer';
 import { PinUnlockScreen } from '@/components/ui/PinUnlockScreen';
 import { heroContainer, heroChild, tabPillTransition } from '@/lib/motion';
+import { useSEO } from '@/lib/seo';
 import type { VaultFilter } from '@/types';
 import {
   Heart,
@@ -51,6 +52,13 @@ export function scrollToPhotosSection() {
 }
 
 export const Library: React.FC = () => {
+  useSEO({
+    title: 'ScrapItBro — Scrap the details. Keep the photo.',
+    description: 'ScrapItBro lets you inspect the hidden details in your photos and create clean copies with metadata removed, while keeping your original photo untouched.',
+    canonicalPath: '/',
+    noindex: false,
+  });
+
   const navigate = useNavigate();
   const {
     photos,

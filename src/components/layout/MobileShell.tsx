@@ -300,7 +300,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -6 }}
                     transition={{ duration: 0.15, ease: 'easeOut' }}
-                    className="absolute top-[calc(100%+8px)] right-3.5 sm:right-6 md:right-8 z-50 w-[min(260px,calc(100vw-28px))] vault-glass-popover rounded-2xl p-2.5 flex flex-col gap-2"
+                    className="absolute top-[calc(100%+8px)] right-3.5 sm:right-6 md:right-8 z-50 w-[min(260px,calc(100vw-28px))] bg-white border border-slate-200/90 rounded-2xl p-2.5 shadow-xl shadow-slate-900/10 flex flex-col gap-2"
                   >
                     {/* PRODUCT GROUP */}
                     <div className="flex flex-col gap-0.5">
@@ -336,7 +336,7 @@ export const MobileShell: React.FC<MobileShellProps> = ({ children }) => {
                       </div>
                     </div>
 
-                    <div className="h-px bg-slate-100/60" />
+                    <div className="h-px bg-slate-100" />
 
                     {/* CONTACT GROUP */}
                     <div className="flex flex-col gap-0.5">

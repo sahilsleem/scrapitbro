@@ -9,10 +9,10 @@ export const Footer: React.FC = () => {
       <div className="flex flex-col gap-4 sm:gap-6">
         
         {/* Main 2-Half Grid on Mobile & Desktop */}
-        <div className="grid grid-cols-2 md:grid-cols-12 gap-4 sm:gap-8 md:gap-10">
+        <div className="grid grid-cols-[1.15fr_0.85fr] sm:grid-cols-2 md:grid-cols-12 gap-3 sm:gap-8 md:gap-10 items-start">
           
-          {/* LEFT SIDE: Brand, Tagline, Short Description, Badge (50% on mobile, 6 cols on desktop) */}
-          <div className="col-span-1 md:col-span-6 flex flex-col gap-1.5 sm:gap-2.5">
+          {/* LEFT SIDE: Brand, Tagline, Short Description, Badge (shifted slightly inward on mobile, 6 cols on desktop) */}
+          <div className="col-span-1 md:col-span-6 flex flex-col gap-1.5 sm:gap-2.5 pl-0.5 sm:pl-0">
             <Link to="/" className="flex items-center gap-1.5 group w-fit focus:outline-hidden">
               <ScrapItBroLogo size={20} showText={true} textSize="sm" />
             </Link>
@@ -31,8 +31,8 @@ export const Footer: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT SIDE: Navigation Links (50% on mobile, 6 cols on desktop) */}
-          <div className="col-span-1 md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-8 text-[10px] sm:text-xs">
+          {/* RIGHT SIDE: Navigation Links (anchored toward right edge on mobile, 6 cols on desktop) */}
+          <div className="col-span-1 md:col-span-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 md:gap-8 text-[10px] sm:text-xs justify-self-end md:justify-self-auto w-fit sm:w-auto">
             
             {/* Group 1: Learn / Info */}
             <div className="flex flex-col gap-1 sm:gap-2">

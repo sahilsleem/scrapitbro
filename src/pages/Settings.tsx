@@ -4,6 +4,7 @@ import { useVaultStore } from '@/store/useVaultStore';
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter';
 import { PinModal, type PinModalMode } from '@/components/ui/PinModal';
 import { motion } from 'framer-motion';
+import { useSEO } from '@/lib/seo';
 import {
   Shield,
   HardDrive,
@@ -17,6 +18,11 @@ import {
 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
+  useSEO({
+    title: 'Settings — ScrapItBro',
+    description: 'Manage your local ScrapItBro preferences, storage, and security PIN.',
+    noindex: true,
+  });
   const {
     isPinConfigured,
     lockVault,

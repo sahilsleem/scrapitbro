@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Footer } from '@/components/layout/Footer';
 import { ArrowLeft, Mail } from 'lucide-react';
+import { updatePageSEO } from '@/lib/seo';
 
 export interface InformationalPageLayoutProps {
   title: string;
@@ -31,19 +32,19 @@ export const InformationalPageLayout: React.FC<InformationalPageLayoutProps> = (
   ctaSecondaryLink,
   children,
 }) => {
-  // Update document title and meta description dynamically
+  const location = useLocation();
+
+  // Update document title, meta description, canonical URL, and OG tags dynamically
   useEffect(() => {
-    document.title = metaTitle;
-    let descMeta = document.querySelector('meta[name="description"]');
-    if (!descMeta) {
-      descMeta = document.createElement('meta');
-      descMeta.setAttribute('name', 'description');
-      document.head.appendChild(descMeta);
-    }
-    descMeta.setAttribute('content', metaDescription);
+    updatePageSEO({
+      title: metaTitle,
+      description: metaDescription,
+      canonicalPath: location.pathname,
+      noindex: false,
+    });
 
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
-  }, [metaTitle, metaDescription]);
+  }, [metaTitle, metaDescription, location.pathname]);
 
   return (
     <div className="flex flex-col w-full flex-1 max-w-4xl mx-auto px-4 sm:px-8">

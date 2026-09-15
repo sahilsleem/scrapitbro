@@ -7,6 +7,7 @@ import { scrubPhotoMetadata, exportOriginalPhoto } from '@/lib/file-processing';
 import type { StrippingResult } from '@/lib/metadata-stripper';
 import { extractCompletePhotoMetadata } from '@/lib/metadata-formatter';
 import { PinUnlockScreen } from '@/components/ui/PinUnlockScreen';
+import { useSEO } from '@/lib/seo';
 import type { PhotoItem } from '@/types';
 import {
   formatGpsCoordinates,
@@ -37,6 +38,12 @@ import {
 } from 'lucide-react';
 
 export const PhotoDetail: React.FC = () => {
+  useSEO({
+    title: 'Photo Details — ScrapItBro',
+    description: 'Inspect metadata and create clean copies of photos locally on your device.',
+    noindex: true,
+  });
+
   const { id: rawId } = useParams<{ id: string }>();
   const id = rawId ? decodeURIComponent(rawId) : '';
   const navigate = useNavigate();
